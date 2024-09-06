@@ -1,29 +1,30 @@
 package storage
 
-// migrations/balances
-type Balance struct {
-	Value   float64 `json:"value"`
-	Bonuses int     `json:"bonuses"`
+// migrations/wallet
+type Wallet struct {
+	Balance float64 `json:"balance"`
+	Scores  int     `json:"scores"`
+	IsLock  bool    `json:"is_lock"`
 }
 
-// GetValue возвращает текущее значение баланса
-func (b *Balance) GetValue() float64 {
-	return b.Value
+// GetBalance возвращает текущее значение баланса
+func (w *Wallet) GetBalance() float64 {
+	return w.Balance
 }
 
-// SetValue устанавливает новое значение баланса
-func (b *Balance) SetValue(value float64) {
-	b.Value = value
+// SetBalance устанавливает новое значение баланса
+func (w *Wallet) SetBalance(balance float64) {
+	w.Balance = balance
 }
 
-// GetBonuses возвращает текущее количество бонусов
-func (b *Balance) GetBonuses() int {
-	return b.Bonuses
+// GetGScores возвращает текущее количество бонусов
+func (w *Wallet) GetScores() int {
+	return w.Scores
 }
 
-// SetBonuses устанавливает новое количество бонусов
-func (b *Balance) SetBonuses(bonuses int) {
-	b.Bonuses = bonuses
+// SetGScores устанавливает новое количество бонусов
+func (w *Wallet) SetScores(scores int) {
+	w.Scores = scores
 }
 
 // migrations/users
@@ -31,6 +32,6 @@ type User struct {
 	Login string `json:"login"`
 
 	// Hash(password)
-	Password string  `json:"password"`
-	Balance  Balance `json:"balance"`
+	Password string `json:"password"`
+	Wallet   Wallet `json:"wallet"`
 }
