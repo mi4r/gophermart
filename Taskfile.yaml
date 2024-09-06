@@ -1,0 +1,19 @@
+# Документация https://taskfile.dev/
+version: "3"
+
+dotenv:
+  - .env # Должен быть файл .env Где указаны нужные переменные окружения
+
+tasks:
+  statictest:
+    cmds:
+      - go vet -vettool=./statictest ./...
+  migration-up:
+    cmds:
+      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_POT/$DB_NAME?sslmode=disable up
+  migration-down:
+    cmds:
+      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_POT/$DB_NAME?sslmode=disable down
+  build:
+    cmds:
+      - ""
