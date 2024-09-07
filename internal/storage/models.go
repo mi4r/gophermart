@@ -1,37 +1,26 @@
 package storage
 
-// migrations/wallet
-type Wallet struct {
-	Balance float64 `json:"balance"`
-	Scores  int     `json:"scores"`
-	IsLock  bool    `json:"is_lock"`
+import "time"
+
+type OrderStatus string
+
+const (
+	StatusNew        OrderStatus = "NEW"
+	StatusProcessing OrderStatus = "PROCESSING"
+	StatusInvalid    OrderStatus = "INVALID"
+	StatusProcessed  OrderStatus = "PROCESSED"
+)
+
+type Order struct {
+	Number     string      `json:"number"`
+	Status     OrderStatus `json:"status"`
+	Accrual    int64       `json:"accrual"`
+	UploadedAt time.Time   `json:"uploaded_at"`
 }
 
-// GetBalance возвращает текущее значение баланса
-func (w *Wallet) GetBalance() float64 {
-	return w.Balance
-}
-
-// SetBalance устанавливает новое значение баланса
-func (w *Wallet) SetBalance(balance float64) {
-	w.Balance = balance
-}
-
-// GetGScores возвращает текущее количество бонусов
-func (w *Wallet) GetScores() int {
-	return w.Scores
-}
-
-// SetGScores устанавливает новое количество бонусов
-func (w *Wallet) SetScores(scores int) {
-	w.Scores = scores
-}
-
-// migrations/users
 type User struct {
-	Login string `json:"login"`
-
-	// Hash(password)
-	Password string `json:"password"`
-	Wallet   Wallet `json:"wallet"`
+	Login    string  `json:"login"`
+	Password string  `json:"password"`
+	Balance  float64 `json:"balance"`
+	Orders   []Order `json:"-"`
 }

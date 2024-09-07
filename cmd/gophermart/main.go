@@ -4,15 +4,22 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/mi4r/gophermart/internal/config"
 	"github.com/mi4r/gophermart/internal/server"
 	"github.com/mi4r/gophermart/internal/storage"
 	"github.com/mi4r/gophermart/lib/logger"
+
+	_ "github.com/mi4r/gophermart/docs"
 )
 
+// Documentation: https://github.com/swaggo/swag
+// @title Gophermart
+// @version 1.0
+// @description Swagger for Gopher Market API
+// @host localhost:8080
+// @BasePath /
 func main() {
 	config := config.NewServerConfig()
 	logger.InitLogger(config.LogLevel)
@@ -20,26 +27,18 @@ func main() {
 	server := server.NewServer(
 		config, &storage,
 	)
+	go server.Start()
 
-	wg := &sync.WaitGroup{}
-	// Идея в том чтобы при получении сигнала счетчик становился 0
-	wg.Add(1)
+	// Канал для сигнала завершения
+	done := make(chan struct{})
 
-	go func() {
-		defer wg.Done()
-		server.Start()
-	}()
+	// Канал для перехвата сигналов
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	go func() {
-		// Канал для получения сигналов
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+	sig := <-sigChan
+	slog.Debug("received signal", slog.String("signal", sig.String()))
+	close(done)
+	server.Shutdown()
 
-		// Ожидаем сигнал
-		s := <-sigChan
-		slog.Debug("A shutdown signal has been received", slog.String("signal", s.String()))
-		wg.Done()
-	}()
-
-	wg.Wait()
 }

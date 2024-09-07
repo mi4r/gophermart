@@ -23,3 +23,9 @@ tasks:
   build:
     cmds:
       - ""
+  run:
+    cmds:
+      - go run cmd/gophermart/main.go
+  swag:
+    cmds:
+      - swag init -g ./cmd/gophermart/main.go
