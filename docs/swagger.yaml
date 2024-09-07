@@ -1,0 +1,21 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: Gopher Market.
+  title: Swagger for Gopher Market API
+  version: "1.0"
+paths:
+  /ping:
+    get:
+      consumes:
+      - text/plain
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+      summary: Health check of the server
+      tags:
+      - Common
+swagger: "2.0"
