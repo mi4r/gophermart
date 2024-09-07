@@ -8,8 +8,9 @@ package storage
 type Storage interface {
 }
 
-func NewStorage(driverType string) {
+func NewStorage(driverType string) Storage {
 	switch driverType {
 	// TODO
 	}
+	return nil
 }

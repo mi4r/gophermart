@@ -10,13 +10,16 @@ tasks:
       - go vet -vettool=./statictest ./...
   migration-up:
     cmds:
-      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_POT/$DB_NAME?sslmode=disable up
+      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
   migration-up-1:
     cmds:
-      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_POT/$DB_NAME?sslmode=disable up 1
+      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up 1
   migration-down-1:
     cmds:
-      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_POT/$DB_NAME?sslmode=disable down 1
+      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable down 1
+  migration-drop:
+    cmds:
+      - migrate -path migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
   build:
     cmds:
       - ""
