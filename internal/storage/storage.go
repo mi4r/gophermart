@@ -6,11 +6,17 @@ package storage
 // Update
 // Delete
 type Storage interface {
+	Open() error
+	Close()
+
+	UserCreate(user User) error
+	UserReadOne(login string) (User, error)
+	UserReadAll() ([]User, error)
 }
 
-func NewStorage(driverType string) Storage {
+func NewStorage(driverType string, path string) Storage {
 	switch driverType {
-	// TODO
+	default:
+		return NewPgxDriver(path)
 	}
-	return nil
 }

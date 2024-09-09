@@ -1,6 +1,8 @@
 package storage
 
-import "time"
+import (
+	"time"
+)
 
 type OrderStatus string
 
@@ -23,4 +25,12 @@ type User struct {
 	Password string  `json:"password"`
 	Balance  float64 `json:"balance"`
 	Orders   []Order `json:"-"`
+}
+
+func (u *User) GetBalance() float64 {
+	return u.Balance
+}
+
+func (u *User) SetBalance(b float64) {
+	u.Balance = b
 }
