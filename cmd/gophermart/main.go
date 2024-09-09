@@ -11,6 +11,7 @@ import (
 	"github.com/mi4r/gophermart/internal/storage"
 	"github.com/mi4r/gophermart/lib/logger"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/mi4r/gophermart/docs"
 )
 
