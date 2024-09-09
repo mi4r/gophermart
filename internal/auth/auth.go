@@ -16,17 +16,17 @@ const (
 	SecretKey  = "super-secret-key" // Это ключ для подписи куки
 )
 
-// SignUserID создает подпись для идентификатора пользователя.
-func SignUserID(userID string) string {
+// SignUser создает подпись для идентификатора пользователя.
+func SignUser(userLogin string) string {
 	h := hmac.New(sha256.New, []byte(SecretKey))
-	h.Write([]byte(userID))
+	h.Write([]byte(userLogin))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
 // SetUserCookie устанавливает пользователю подписанную куку с его идентификатором.
-func SetUserCookie(c echo.Context, userID string) {
-	signature := SignUserID(userID)
-	cookieValue := userID + "." + signature
+func SetUserCookie(c echo.Context, userLogin string) {
+	signature := SignUser(userLogin)
+	cookieValue := userLogin + "." + signature
 	cookie := &http.Cookie{
 		Name:     CookieName,
 		Value:    cookieValue,
@@ -49,12 +49,12 @@ func ValidateUserCookie(c echo.Context) (string, bool) {
 		return "", false
 	}
 
-	userID := parts[0]
+	userLogin := parts[0]
 	signature := parts[1]
 
-	expectedSignature := SignUserID(userID)
+	expectedSignature := SignUser(userLogin)
 	if hmac.Equal([]byte(expectedSignature), []byte(signature)) {
-		return userID, true
+		return userLogin, true
 	}
 
 	return "", false
