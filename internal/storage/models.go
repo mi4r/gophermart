@@ -18,14 +18,17 @@ type Order struct {
 	Status     OrderStatus `json:"status"`
 	Accrual    int64       `json:"accrual"`
 	UploadedAt time.Time   `json:"uploaded_at"`
-}
+} //@name Order
+
+type Creds struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+} // @name Creds
 
 type User struct {
-	Login    string  `json:"login"`
-	Password string  `json:"password"`
-	Balance  float64 `json:"balance"`
-	Orders   []Order `json:"-"`
-}
+	Creds
+	Balance float64 `json:"balance"`
+} //@name User
 
 func (u *User) GetBalance() float64 {
 	return u.Balance

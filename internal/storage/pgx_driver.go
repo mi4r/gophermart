@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -49,6 +50,11 @@ func (d *pgxDriver) Open() error {
 		return err
 	}
 	d.connPool = pool
+
+	// Try connect
+	if err := d.Ping(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -65,7 +71,7 @@ func (d *pgxDriver) autoMigrate() error {
 	migrDirAbsPath := path.Join(curDirAbs, MigrDirName)
 	slog.Debug("migration init", slog.String("path", migrDirAbsPath))
 	migr, err := migrate.New(
-		migrDirAbsPath,
+		fmt.Sprintf("file://%s", migrDirAbsPath),
 		d.dbURL,
 	)
 	if err != nil {

@@ -1,20 +1,92 @@
 basePath: /
+definitions:
+  Creds:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  Response:
+    properties:
+      payload: {}
+      text:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
-  description: Gopher Market.
-  title: Swagger for Gopher Market API
+  description: Swagger for Gopher Market API
+  title: Gophermart
   version: "1.0"
 paths:
-  /ping:
-    get:
+  /api/user/login:
+    post:
       consumes:
-      - text/plain
+      - application/json
+      parameters:
+      - description: login and password
+        in: body
+        name: creds
+        required: true
+        schema:
+          $ref: '#/definitions/Creds'
+      produces:
+      - application/json
       responses:
         "200":
-          description: pong
+          description: OK
+        "400":
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+      summary: Check creds and login user
+      tags:
+      - users
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login and password
+        in: body
+        name: creds
+        required: true
+        schema:
+          $ref: '#/definitions/Creds'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+      summary: Check creds and registration user
+      tags:
+      - users
+  /ping:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
       summary: Health check of the server
       tags:
       - Common

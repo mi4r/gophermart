@@ -96,32 +96,40 @@ func TestUsersCreate(t *testing.T) {
 		{
 			name: "create_Admin",
 			user: User{
-				Login:    "admin",
-				Password: "admin",
+				Creds: Creds{
+					Login:    "admin",
+					Password: "admin",
+				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "create_User1",
 			user: User{
-				Login:    "user1",
-				Password: "user1",
+				Creds: Creds{
+					Login:    "user1",
+					Password: "user1",
+				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "create_User2",
 			user: User{
-				Login:    "user2",
-				Password: "user2",
+				Creds: Creds{
+					Login:    "user2",
+					Password: "user2",
+				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "create_OneMoreUser1",
 			user: User{
-				Login:    "user1",
-				Password: "user1",
+				Creds: Creds{
+					Login:    "user1",
+					Password: "user1",
+				},
 			},
 			wantErr: true,
 		},
