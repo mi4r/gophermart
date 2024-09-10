@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     login VARCHAR(255) UNIQUE NOT NULL,
@@ -15,4 +17,4 @@ CREATE TABLE orders (
     FOREIGN KEY (user_login) REFERENCES users(login)
 );
 
-
+COMMIT;

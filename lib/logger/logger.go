@@ -6,22 +6,24 @@ import (
 )
 
 func InitLogger(level string) {
-	var logger *slog.Logger
+	// var logger *slog.Logger
+	var opts PrettyHandlerOptions
+
 	switch level {
 	case "info", "production", "prod":
-		logger = slog.New(slog.NewJSONHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
+		opts = PrettyHandlerOptions{
+			SlogOpts: slog.HandlerOptions{
 				Level: slog.LevelInfo,
 			},
-		))
+		}
 	default:
-		logger = slog.New(slog.NewTextHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelInfo,
+		opts = PrettyHandlerOptions{
+			SlogOpts: slog.HandlerOptions{
+				Level: slog.LevelDebug,
 			},
-		))
+		}
 	}
+	handler := newPrettyHandler(os.Stdout, opts)
+	logger := slog.New(handler)
 	slog.SetDefault(logger)
 }

@@ -3,12 +3,20 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"os"
+	"path"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+const MigrDirName string = "migrations"
 
 type pgxDriver struct {
 	dbURL    string
@@ -43,6 +51,28 @@ func (d *pgxDriver) Open() error {
 	}
 	d.connPool = pool
 	return nil
+}
+
+func (d *pgxDriver) Ping() error {
+	return d.connPool.Ping(context.Background())
+}
+
+// Автоматическая миграция базы. Думаю прикрутить ключ при запуске
+func (d *pgxDriver) autoMigrate() error {
+	curDirAbs, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	migrDirAbsPath := path.Join(curDirAbs, MigrDirName)
+	slog.Debug("migration init", slog.String("path", migrDirAbsPath))
+	migr, err := migrate.New(
+		fmt.Sprintf("file://%s", migrDirAbsPath),
+		d.dbURL,
+	)
+	if err != nil {
+		return err
+	}
+	return migr.Up()
 }
 
 func (d *pgxDriver) Close() {
