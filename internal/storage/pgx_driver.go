@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -66,7 +65,7 @@ func (d *pgxDriver) autoMigrate() error {
 	migrDirAbsPath := path.Join(curDirAbs, MigrDirName)
 	slog.Debug("migration init", slog.String("path", migrDirAbsPath))
 	migr, err := migrate.New(
-		fmt.Sprintf("file://%s", migrDirAbsPath),
+		migrDirAbsPath,
 		d.dbURL,
 	)
 	if err != nil {

@@ -46,15 +46,15 @@ func TestMain(m *testing.M) {
 	}
 
 	hostAndPort := resource.GetHostPort("5432/tcp")
-	databaseUrl := fmt.Sprintf("postgres://test:test@%s/test?sslmode=disable", hostAndPort)
+	databaseURL := fmt.Sprintf("postgres://test:test@%s/test?sslmode=disable", hostAndPort)
 
-	log.Println("Connecting to database on url: ", databaseUrl)
+	log.Println("Connecting to database on url: ", databaseURL)
 
 	resource.Expire(120) // Tell docker to hard kill the container in 120 seconds
 
 	pool.MaxWait = 120 * time.Second
 	if err = pool.Retry(func() error {
-		storage = NewPgxDriver(databaseUrl)
+		storage = NewPgxDriver(databaseURL)
 		if err := storage.Open(); err != nil {
 			return err
 		}
