@@ -26,7 +26,7 @@ func main() {
 	logger.InitLogger(config.LogLevel)
 	storage := storage.NewStorage(config.DriverType, config.StoragePath)
 	server := server.NewServer(
-		config, &storage,
+		config, storage,
 	)
 	go server.Start()
 
