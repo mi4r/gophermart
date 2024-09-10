@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/mi4r/gophermart/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -13,7 +14,9 @@ import (
 const (
 	InvalidRequest      string = "Invalid request"
 	HashedPasswordError string = "Server can't hash the password"
-	UserNotFound        string = "User not found"
+	UserNotFoundError   string = "User not found"
+	LoginUsedError      string = "Login has already taken"
+	InvalidPassword     string = "Invalid password"
 )
 
 // Ping
@@ -39,13 +42,32 @@ func (s *Server) registerHandler(c echo.Context) error {
 	user.Password = string(hashedPassword)
 
 	if err := s.storage.UserCreate(user); err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusConflict, err.Error())
 	}
 
-	auth.SetUserCookie(c, user.Login)
-	return nil
+	cookie := auth.GetUserCookie(user.Login)
+	c.SetCookie(cookie)
+	return c.JSON(http.StatusOK, "The user has been successfully registered and authenticated")
 }
 
 func (s *Server) loginHandler(c echo.Context) error {
-	return nil
+	var user storage.User
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, InvalidRequest)
+	}
+
+	userStored, err := s.storage.UserReadOne(user.Login)
+	if err == pgx.ErrNoRows {
+		return c.JSON(http.StatusUnauthorized, UserNotFoundError)
+	} else if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(userStored.Password), []byte(user.Password)); err != nil {
+		return c.JSON(http.StatusUnauthorized, InvalidPassword)
+	}
+
+	cookie := auth.GetUserCookie(user.Login)
+	c.SetCookie(cookie)
+	return c.JSON(http.StatusOK, "The user has been successfully authenticated")
 }
