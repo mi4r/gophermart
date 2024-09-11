@@ -18,13 +18,12 @@ func parseDriverType(path string) string {
 	return strings.Split(path, ":")[0]
 }
 
-func tryLoadFromEnv(key, fromFlags string) string {
-	value, ok := os.LookupEnv(key)
-	if !ok {
-		return fromFlags
-	} else {
-		return value
+func ifEmpty(fromFlag, fromEnv string) string {
+	// Если пусто во флаге, то вернем из окружения
+	if fromFlag == "" {
+		return fromEnv
 	}
+	return fromFlag
 }
 
 type ServerConfig struct {
@@ -36,30 +35,33 @@ type ServerConfig struct {
 }
 
 func NewServerConfig() ServerConfig {
-	return loadServerConfigFromEnv()
+	return loadServerConfigFromFlags()
 }
 
+// Первым делом парсим из окружения
+func loadServerConfigFromEnv() ServerConfig {
+	var c ServerConfig
+	c.ListenAddr = os.Getenv("RUN_ADDRESS")
+	c.StoragePath = os.Getenv("DATABASE_URI")
+	c.AccrualSystemAddress = os.Getenv("ACCRUAL_SYSTEM_ADDRESS")
+	return c
+}
+
+// Затем парсим из флагов. Если есть из флага то заменяем
 func loadServerConfigFromFlags() ServerConfig {
-	var config ServerConfig
+	confFromEnv := loadServerConfigFromEnv()
+	var c ServerConfig
 	d := flag.String("d", "", "Path to store")
 	l := flag.String("l", "debug", "Logger Level")
-	a := flag.String("a", "localhost:8080", "Listen address with port")
-	r := flag.String("r", "localhost:3000", "Accrual system address")
+	a := flag.String("a", "", "Listen address with port")
+	r := flag.String("r", "", "Accrual system address")
 	flag.Parse()
 
-	config.ListenAddr = *a
-	config.StoragePath = *d
-	config.DriverType = parseDriverType(config.StoragePath)
-	config.AccrualSystemAddress = *r
-	config.LogLevel = *l
+	c.StoragePath = ifEmpty(*d, confFromEnv.StoragePath)
+	c.ListenAddr = ifEmpty(*a, confFromEnv.ListenAddr)
+	c.AccrualSystemAddress = ifEmpty(*r, confFromEnv.AccrualSystemAddress)
+	c.DriverType = parseDriverType(c.StoragePath)
+	c.LogLevel = *l
 
-	return config
-}
-
-func loadServerConfigFromEnv() ServerConfig {
-	fromFlags := loadServerConfigFromFlags()
-	fromFlags.ListenAddr = tryLoadFromEnv("RUN_ADDRESS", fromFlags.ListenAddr)
-	fromFlags.StoragePath = tryLoadFromEnv("DATABASE_URI", fromFlags.StoragePath)
-	fromFlags.AccrualSystemAddress = tryLoadFromEnv("ACCRUAL_SYSTEM_ADDRESS", fromFlags.AccrualSystemAddress)
-	return fromFlags
+	return c
 }
