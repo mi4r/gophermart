@@ -23,8 +23,8 @@ func SignUser(userLogin string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// SetUserCookie устанавливает пользователю подписанную куку с его идентификатором.
-func SetUserCookie(c echo.Context, userLogin string) {
+// GetUserCookie устанавливает пользователю подписанную куку с его идентификатором.
+func GetUserCookie(userLogin string) *http.Cookie {
 	signature := SignUser(userLogin)
 	cookieValue := userLogin + "." + signature
 	cookie := &http.Cookie{
@@ -34,7 +34,7 @@ func SetUserCookie(c echo.Context, userLogin string) {
 		HttpOnly: true,
 		Secure:   false,
 	}
-	c.SetCookie(cookie)
+	return cookie
 }
 
 // ValidateUserCookie проверяет подлинность куки и возвращает идентификатор пользователя.
