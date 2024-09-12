@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/mi4r/gophermart/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -50,11 +51,12 @@ func (s *Server) registerHandler(c echo.Context) error {
 
 	// Ожидаются еще ответы 409 - Логин уже занят
 	if err := s.storage.UserCreate(user); err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusConflict, err.Error())
 	}
 
-	auth.SetUserCookie(c, user.Login)
-	return nil
+	cookie := auth.GetUserCookie(user.Login)
+	c.SetCookie(cookie)
+	return c.String(http.StatusOK, "The user has been successfully registered and authenticated")
 }
 
 // User login
@@ -69,5 +71,26 @@ func (s *Server) registerHandler(c echo.Context) error {
 // @Failure 500 {string}
 // @Router /api/user/login [post]
 func (s *Server) loginHandler(c echo.Context) error {
-	return nil
+	var user storage.User
+	if err := c.Bind(&user); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	if user.Login == "" || user.Password == "" {
+		return c.String(http.StatusBadRequest, errEmptyLoginOrPassword.Error())
+	}
+
+	userStored, err := s.storage.UserReadOne(user.Login)
+	if err == pgx.ErrNoRows {
+		return c.String(http.StatusUnauthorized, err.Error())
+	} else if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(userStored.Password), []byte(user.Password)); err != nil {
+		return c.String(http.StatusUnauthorized, err.Error())
+	}
+
+	cookie := auth.GetUserCookie(user.Login)
+	c.SetCookie(cookie)
+	return c.String(http.StatusOK, "The user has been successfully authenticated")
 }
