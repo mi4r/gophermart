@@ -17,18 +17,28 @@ var errEmptyLoginOrPassword = errors.New("login or password cannot be empty")
 // Ping
 // @Summary Health check of the server
 // @Tags Common
-// @Accept  text/plain
-// @Success 200 {string} string "pong"
+// @Success 200 {string} pong
 // @Router /ping [get]
 func (s *Server) pingHandler(c echo.Context) error {
 	return c.String(200, "pong")
 }
 
+// User register
+// @Summary Check creds and registration user
+// @Tags users
+// @Accept  json
+// @Param creds body Creds true "login and password"
+// @Router /api/user/register [post]
+// @Success 200
+// @Failure 400 {string}
+// @Failure 409 {string}
+// @Failure 500 {string}
 func (s *Server) registerHandler(c echo.Context) error {
 	var user storage.User
 	if err := c.Bind(&user); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
 	if user.Login == "" || user.Password == "" {
 		return c.String(http.StatusBadRequest, errEmptyLoginOrPassword.Error())
 	}
@@ -39,6 +49,7 @@ func (s *Server) registerHandler(c echo.Context) error {
 	}
 	user.Password = string(hashedPassword)
 
+	// Ожидаются еще ответы 409 - Логин уже занят
 	if err := s.storage.UserCreate(user); err != nil {
 		return c.String(http.StatusConflict, err.Error())
 	}
@@ -48,6 +59,17 @@ func (s *Server) registerHandler(c echo.Context) error {
 	return c.String(http.StatusOK, "The user has been successfully registered and authenticated")
 }
 
+// User login
+// @Summary Check creds and login user
+// @Tags users
+// @Accept  json
+// @Produce json
+// @Param creds body Creds true "login and password"
+// @Success 200
+// @Failure 400 {string}
+// @Failure 401 {string}
+// @Failure 500 {string}
+// @Router /api/user/login [post]
 func (s *Server) loginHandler(c echo.Context) error {
 	var user storage.User
 	if err := c.Bind(&user); err != nil {

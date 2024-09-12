@@ -37,11 +37,13 @@ func (s *Server) Start() {
 func (s *Server) Shutdown() {
 	slog.Debug("http server stopped")
 	// ...
+	os.Exit(0)
 }
 
 func (s *Server) Configure() {
 	s.setMiddlewares()
 	s.setRoutes()
+	s.setStorage()
 	// ...
 }
 
@@ -52,6 +54,15 @@ func (s *Server) setRoutes() {
 	s.router.POST("/api/user/register", s.registerHandler)
 	s.router.POST("/api/user/login", s.loginHandler)
 	// ...
+}
+
+// TODO
+func (s *Server) setStorage() {
+	if err := s.storage.Open(); err != nil {
+		slog.Error(err.Error())
+		s.Shutdown()
+	}
+
 }
 
 func (s *Server) setMiddlewares() {
