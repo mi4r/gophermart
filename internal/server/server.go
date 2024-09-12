@@ -51,9 +51,14 @@ func (s *Server) setRoutes() {
 	// swagger
 	s.router.GET("/swagger/*", echoSwagger.WrapHandler)
 	s.router.GET("/ping", s.pingHandler)
-	s.router.POST("/api/user/register", s.registerHandler)
-	s.router.POST("/api/user/login", s.loginHandler)
-	// ...
+
+	// /api/user
+	s.router.POST("/api/user/register", s.userRegisterHandler)
+	s.router.POST("/api/user/login", s.userLoginHandler)
+
+	// /api/user/orders
+	s.router.POST("/api/user/orders", s.userPostOrdersHandler)
+	s.router.GET("/api/user/orders", s.userGetOrdersHandler)
 }
 
 // TODO

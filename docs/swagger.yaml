@@ -7,12 +7,32 @@ definitions:
       password:
         type: string
     type: object
-  Response:
+  Order:
     properties:
-      payload: {}
-      text:
+      accrual:
+        type: integer
+      number:
+        example: "12345678903"
+        type: string
+      status:
+        $ref: '#/definitions/storage.OrderStatus'
+      uploaded_at:
+        example: "2020-12-10T15:15:45+03:00"
+        format: date-time
         type: string
     type: object
+  storage.OrderStatus:
+    enum:
+    - NEW
+    - PROCESSING
+    - INVALID
+    - PROCESSED
+    type: string
+    x-enum-varnames:
+    - StatusNew
+    - StatusProcessing
+    - StatusInvalid
+    - StatusProcessed
 host: localhost:8080
 info:
   contact: {}
@@ -24,39 +44,122 @@ paths:
     post:
       consumes:
       - application/json
+      description: Для передачи аутентификационных данных используется механизм cookies
       parameters:
-      - description: login and password
+      - description: Логин и пароль зарегистрированного пользователя
         in: body
         name: creds
         required: true
         schema:
           $ref: '#/definitions/Creds'
       produces:
+      - text/plain
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован и аутентифицирован
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "401":
+          description: Неверная пара логин/пароль
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Аутентификация пользователя
+      tags:
+      - Пользователь
+  /api/user/orders:
+    get:
+      consumes:
+      - text/plain
+      description: |-
+        Хендлер доступен только авторизованному пользователю
+        Номера заказа в выдаче должны быть отсортированы по времени загрузки от самых старых к самым новым
+        Формат даты — RFC3339.
+      produces:
       - application/json
       responses:
         "200":
-          description: OK
-        "400":
-          description: Bad Request
+          description: Успешная обработка запроса
           schema:
-            $ref: '#/definitions/Response'
+            items:
+              $ref: '#/definitions/Order'
+            type: array
+        "204":
+          description: Нет данных для ответа
+          schema:
+            type: string
         "401":
-          description: Unauthorized
+          description: Пользователь не авторизован
           schema:
-            $ref: '#/definitions/Response'
+            type: string
         "500":
-          description: Internal Server Error
+          description: Внутренняя ошибка сервера
           schema:
-            $ref: '#/definitions/Response'
-      summary: Check creds and login user
+            type: string
+      summary: Получение списка загруженных номеров заказов
       tags:
-      - users
+      - Заказы
+    post:
+      consumes:
+      - text/plain
+      description: |-
+        Хендлер доступен только аутентифицированным пользователям
+        Номером заказа является последовательность цифр произвольной длины
+      parameters:
+      - description: Трек номер заказа
+        in: body
+        name: number
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Номер заказа уже был загружен этим пользователем
+          schema:
+            type: string
+        "202":
+          description: Новый номер заказа принят в обработку
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "401":
+          description: Пользователь не аутентифицирован
+          schema:
+            type: string
+        "409":
+          description: Номер заказа уже был загружен другим пользователем
+          schema:
+            type: string
+        "422":
+          description: Неверный формат номера заказа
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Загрузка номера заказа
+      tags:
+      - Заказы
   /api/user/register:
     post:
       consumes:
       - application/json
+      description: Для передачи аутентификационных данных используется механизм cookies
       parameters:
-      - description: login and password
+      - description: Логин и пароль не зарегистрированного пользователя
         in: body
         name: creds
         required: true
@@ -64,30 +167,32 @@ paths:
           $ref: '#/definitions/Creds'
       responses:
         "200":
-          description: OK
+          description: Пользователь успешно зарегистрирован и аутентифицирован
+          schema:
+            type: string
         "400":
-          description: Bad Request
+          description: Неверный формат запроса
           schema:
-            $ref: '#/definitions/Response'
+            type: string
         "409":
-          description: Conflict
+          description: Логин уже занят
           schema:
-            $ref: '#/definitions/Response'
+            type: string
         "500":
-          description: Internal Server Error
+          description: Внутренняя ошибка сервера
           schema:
-            $ref: '#/definitions/Response'
-      summary: Check creds and registration user
+            type: string
+      summary: Регистрация пользователя
       tags:
-      - users
+      - Пользователь
   /ping:
     get:
+      description: Простая проверка состояния сервера
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Response'
-      summary: Health check of the server
+            type: string
       tags:
-      - Common
+      - Разное
 swagger: "2.0"
