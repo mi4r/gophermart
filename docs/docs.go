@@ -17,19 +17,20 @@ const docTemplate = `{
     "paths": {
         "/api/user/login": {
             "post": {
+                "description": "Для передачи аутентификационных данных используется механизм cookies",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "text/plain"
                 ],
                 "tags": [
-                    "users"
+                    "Пользователь"
                 ],
-                "summary": "Check creds and login user",
+                "summary": "Аутентификация пользователя",
                 "parameters": [
                     {
-                        "description": "login and password",
+                        "description": "Логин и пароль зарегистрированного пользователя",
                         "name": "creds",
                         "in": "body",
                         "required": true,
@@ -40,24 +41,139 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Пользователь успешно зарегистрирован и аутентифицирован",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Неверный формат запроса",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Неверная пара логин/пароль",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user/orders": {
+            "get": {
+                "description": "Хендлер доступен только авторизованному пользователю\nНомера заказа в выдаче должны быть отсортированы по времени загрузки от самых старых к самым новым\nФормат даты — RFC3339.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заказы"
+                ],
+                "summary": "Получение списка загруженных номеров заказов",
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Order"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Нет данных для ответа",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Хендлер доступен только аутентифицированным пользователям\nНомером заказа является последовательность цифр произвольной длины",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Заказы"
+                ],
+                "summary": "Загрузка номера заказа",
+                "parameters": [
+                    {
+                        "description": "Трек номер заказа",
+                        "name": "number",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Номер заказа уже был загружен этим пользователем",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "202": {
+                        "description": "Новый номер заказа принят в обработку",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Номер заказа уже был загружен другим пользователем",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "422": {
+                        "description": "Неверный формат номера заказа",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -65,16 +181,17 @@ const docTemplate = `{
         },
         "/api/user/register": {
             "post": {
+                "description": "Для передачи аутентификационных данных используется механизм cookies",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Пользователь"
                 ],
-                "summary": "Check creds and registration user",
+                "summary": "Регистрация пользователя",
                 "parameters": [
                     {
-                        "description": "login and password",
+                        "description": "Логин и пароль не зарегистрированного пользователя",
                         "name": "creds",
                         "in": "body",
                         "required": true,
@@ -85,24 +202,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Пользователь успешно зарегистрирован и аутентифицирован",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Неверный формат запроса",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
                         }
                     },
                     "409": {
-                        "description": "Conflict",
+                        "description": "Логин уже занят",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
                         }
                     }
                 }
@@ -110,15 +230,15 @@ const docTemplate = `{
         },
         "/ping": {
             "get": {
+                "description": "Простая проверка состояния сервера",
                 "tags": [
-                    "Common"
+                    "Разное"
                 ],
-                "summary": "Health check of the server",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Response"
+                            "type": "string"
                         }
                     }
                 }
@@ -137,14 +257,40 @@ const docTemplate = `{
                 }
             }
         },
-        "Response": {
+        "Order": {
             "type": "object",
             "properties": {
-                "payload": {},
-                "text": {
-                    "type": "string"
+                "accrual": {
+                    "type": "integer"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "12345678903"
+                },
+                "status": {
+                    "$ref": "#/definitions/storage.OrderStatus"
+                },
+                "uploaded_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2020-12-10T15:15:45+03:00"
                 }
             }
+        },
+        "storage.OrderStatus": {
+            "type": "string",
+            "enum": [
+                "NEW",
+                "PROCESSING",
+                "INVALID",
+                "PROCESSED"
+            ],
+            "x-enum-varnames": [
+                "StatusNew",
+                "StatusProcessing",
+                "StatusInvalid",
+                "StatusProcessed"
+            ]
         }
     }
 }`
