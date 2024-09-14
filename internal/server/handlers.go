@@ -3,9 +3,9 @@ package server
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/mi4r/gophermart/internal/storage"
 
@@ -60,12 +60,11 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 
 	// Ожидаются еще ответы 409 - Логин уже занят
 	if err := s.storage.UserCreate(user); err != nil {
-		// Тут должна быть проверка на код 23505. TODO
-		if strings.Contains(err.Error(), errDublicateKeys.Error()) {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return c.String(http.StatusConflict, errLoginIsExists.Error())
-		} else {
-			return c.String(http.StatusInternalServerError, err.Error())
 		}
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	c.SetCookie(auth.GetUserCookie(user.Login))
