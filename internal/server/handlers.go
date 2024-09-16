@@ -16,19 +16,18 @@ import (
 )
 
 const (
-	successUserLogin   string = "User has been successfully registered and authenticated"
-	orderAlreadyUpload string = "Order number already uploaded by this user"
-	orderAccepted      string = "Order number accepted for processing"
+	successUserLogin   string = "user has been successfully registered and authenticated"
+	orderAlreadyUpload string = "order number already uploaded by this user"
+	orderAccepted      string = "order number accepted for processing"
 )
 
 var (
-	errEmptyLoginOrPassword = errors.New("Login or password cannot be empty")
-	errLoginIsExists        = errors.New("Login already exists")
-	errDublicateKeys        = errors.New("Duplicate key value")
-	errPasswordInvalid      = errors.New("Invalid password")
-	errUnauthorized         = errors.New("User is not authenticated")
-	errInvalidOrderID       = errors.New("Invalid order number format")
-	errOrderUploadByAnother = errors.New("Order number already uploaded by another user")
+	errEmptyLoginOrPassword = errors.New("login or password cannot be empty")
+	errLoginIsExists        = errors.New("login already exists")
+	errPasswordInvalid      = errors.New("invalid password")
+	errUnauthorized         = errors.New("user is not authenticated")
+	errInvalidOrderID       = errors.New("invalid order number format")
+	errOrderUploadByAnother = errors.New("order number already uploaded by another user")
 )
 
 // Ping
@@ -37,7 +36,11 @@ var (
 // @Success 200 {string} pong
 // @Router /ping [get]
 func (s *Server) pingHandler(c echo.Context) error {
-	return c.String(200, "pong")
+	storageOK := "pong"
+	if err := s.storage.Ping(); err != nil {
+		storageOK = err.Error()
+	}
+	return c.JSON(http.StatusOK, storageOK)
 }
 
 // User register
@@ -138,31 +141,36 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	orderNumReader := c.Request().Body
-	defer orderNumReader.Close()
+	bodyReader := c.Request().Body
+	defer bodyReader.Close()
 
-	orderNum, err := io.ReadAll(orderNumReader)
-	if err != nil || len(orderNum) == 0 {
+	bodyContent, err := io.ReadAll(bodyReader)
+	if err != nil || len(bodyContent) == 0 {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	orderID := strings.TrimSpace(string(orderNum))
-	if !checkLuhn(orderID) {
+	orderNumber := strings.TrimSpace(string(bodyContent))
+	if !checkLuhn(orderNumber) {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
-
-	storedOrder, err := s.storage.OrderReadOne(orderID)
+	var emptyOrder storage.Order
+	storedOrder, err := s.storage.OrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	if storedOrder != nil && storedOrder.UserLogin != login {
-		return c.String(http.StatusConflict, errOrderUploadByAnother.Error())
-	}
-	if storedOrder != nil && storedOrder.UserLogin == login {
-		return c.String(http.StatusOK, orderAlreadyUpload)
+
+	// Если заказ был найден
+	if storedOrder != emptyOrder {
+		// Проверка на то что заказ уже не создан другим пользователем
+		if storedOrder.UserLogin != login {
+			return c.String(http.StatusConflict, errOrderUploadByAnother.Error())
+			// Проверка на то что заказ уже не был создан этим же пользователем
+		} else if storedOrder.UserLogin == login {
+			return c.String(http.StatusOK, orderAlreadyUpload)
+		}
 	}
 
-	err = s.storage.OrderCreate(login, orderID)
+	err = s.storage.OrderCreate(login, orderNumber)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
