@@ -70,17 +70,9 @@ func (c *Creds) Password2Hash() (string, error) {
 }
 
 func (c *Creds) PasswordCompare(creds Creds) bool {
-	oldHash, err := c.Password2Hash()
-	if err != nil {
-		return false
-	}
-	newHash, err := creds.Password2Hash()
-	if err != nil {
-		return false
-	}
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(oldHash),
-		[]byte(newHash),
+		[]byte(c.Password),
+		[]byte(creds.Password),
 	); err != nil {
 		return false
 	}

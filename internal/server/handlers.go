@@ -2,10 +2,13 @@ package server
 
 import (
 	"errors"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/mi4r/gophermart/internal/storage"
 
@@ -13,14 +16,19 @@ import (
 )
 
 const (
-	successUserLogin string = "user has been successfully registered and authenticated"
+	successUserLogin   string = "User has been successfully registered and authenticated"
+	orderAlreadyUpload string = "Order number already uploaded by this user"
+	orderAccepted      string = "Order number accepted for processing"
 )
 
 var (
-	errEmptyLoginOrPassword = errors.New("login or password cannot be empty")
-	errLoginIsExists        = errors.New("login already exists")
-	errDublicateKeys        = errors.New("duplicate key value")
-	errPasswordInvalid      = errors.New("invalid password")
+	errEmptyLoginOrPassword = errors.New("Login or password cannot be empty")
+	errLoginIsExists        = errors.New("Login already exists")
+	errDublicateKeys        = errors.New("Duplicate key value")
+	errPasswordInvalid      = errors.New("Invalid password")
+	errUnauthorized         = errors.New("User is not authenticated")
+	errInvalidOrderID       = errors.New("Invalid order number format")
+	errOrderUploadByAnother = errors.New("Order number already uploaded by another user")
 )
 
 // Ping
@@ -60,12 +68,11 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 
 	// Ожидаются еще ответы 409 - Логин уже занят
 	if err := s.storage.UserCreate(user); err != nil {
-		// Тут должна быть проверка на код 23505. TODO
-		if strings.Contains(err.Error(), errDublicateKeys.Error()) {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return c.String(http.StatusConflict, errLoginIsExists.Error())
-		} else {
-			return c.String(http.StatusInternalServerError, err.Error())
 		}
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	c.SetCookie(auth.GetUserCookie(user.Login))
@@ -126,7 +133,60 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [post]
 func (s *Server) userPostOrdersHandler(c echo.Context) error {
-	return nil
+	login, ok := auth.ValidateUserCookie(c)
+	if !ok {
+		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+
+	orderNumReader := c.Request().Body
+	defer orderNumReader.Close()
+
+	orderNum, err := io.ReadAll(orderNumReader)
+	if err != nil || len(orderNum) == 0 {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	orderID := strings.TrimSpace(string(orderNum))
+	if !checkLuhn(orderID) {
+		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
+	}
+
+	storedOrder, err := s.storage.OrderReadOne(orderID)
+	if err != nil && err != pgx.ErrNoRows {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	if storedOrder != nil && storedOrder.UserLogin != login {
+		return c.String(http.StatusConflict, errOrderUploadByAnother.Error())
+	}
+	if storedOrder != nil && storedOrder.UserLogin == login {
+		return c.String(http.StatusOK, orderAlreadyUpload)
+	}
+
+	err = s.storage.OrderCreate(login, orderID)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	return c.String(http.StatusCreated, orderAccepted)
+}
+
+func checkLuhn(orderID string) bool {
+	sum := 0
+	nDigits := len(orderID)
+	parity := nDigits % 2
+	for i := 0; i < nDigits; i++ {
+		digit, err := strconv.Atoi(string(orderID[i]))
+		if err != nil {
+			return false
+		}
+		if i%2 == parity {
+			digit *= 2
+			if digit > 9 {
+				digit -= 9
+			}
+		}
+		sum += digit
+	}
+	return (sum % 10) == 0
 }
 
 // Orders get
