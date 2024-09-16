@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/mi4r/gophermart/lib/logger"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -55,18 +57,20 @@ func TestMain(m *testing.M) {
 	pool.MaxWait = 120 * time.Second
 	if err = pool.Retry(func() error {
 		storage = NewPgxDriver(databaseURL)
+		storage.isTest = true
 		if err := storage.Open(); err != nil {
 			return err
 		}
 		return storage.Ping()
 	}); err != nil {
+		pool.Purge(resource)
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	if err := storage.autoMigrate(); err != nil {
-		pool.Purge(resource)
-		log.Fatal(err)
-	}
+	// if err := storage.autoMigrate(); err != nil {
+	// 	pool.Purge(resource)
+	// 	log.Fatal(err)
+	// }
 
 	defer func() {
 		if err := pool.Purge(resource); err != nil {
@@ -149,6 +153,167 @@ func TestUsersCreate(t *testing.T) {
 	}
 }
 
-// func TestAutoMigrate(t *testing.T) {
-// 	storage.autoMigrate()
-// }
+func TestUsersReadOne(t *testing.T) {
+	tests := []struct {
+		name  string
+		login string
+	}{
+		{
+			name:  "read_Admin",
+			login: "admin",
+		},
+		{
+			name:  "create_User1",
+			login: "user1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			user, err := storage.UserReadOne(tt.login)
+			if err != nil {
+				t.Error(err)
+			}
+			if user.Login != tt.login {
+				t.Errorf("want login %s, get login %s", user.Login, tt.login)
+			}
+		})
+	}
+}
+
+func TestUsersReadAll(t *testing.T) {
+	t.Run("read_UsersAll", func(t *testing.T) {
+		users, err := storage.UserReadAll()
+		if err != nil {
+			t.Error(err)
+		}
+		if len(users) == 0 {
+			t.Error("users array size 0")
+		}
+	})
+}
+
+func TestOrdersCreate(t *testing.T) {
+	tests := []struct {
+		name    string
+		number  string
+		login   string
+		wantErr bool
+	}{
+		{
+			name:    "create_AdminOrder1",
+			number:  "123",
+			login:   "admin",
+			wantErr: false,
+		},
+		{
+			name:    "create_AdminOrder2",
+			number:  "1234",
+			login:   "admin",
+			wantErr: false,
+		},
+		{
+			name:    "create_User1Order1",
+			number:  "123",
+			login:   "user1",
+			wantErr: true,
+		},
+		{
+			name:    "create_User1Order2",
+			number:  "1234",
+			login:   "user1",
+			wantErr: true,
+		},
+		{
+			name:    "create_User1Order3",
+			number:  "12345",
+			login:   "user1",
+			wantErr: false,
+		},
+		{
+			name:    "create_User2Order3",
+			number:  "12345",
+			login:   "user2",
+			wantErr: true,
+		},
+		{
+			name:    "create_UserOrder4",
+			number:  "123456",
+			login:   "user2",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := storage.OrderCreate(tt.login, tt.number); err != nil {
+				if tt.wantErr {
+					t.Skipf("want err. number %s already exists. err: %s", tt.number, err.Error())
+				} else {
+					t.Errorf("not created order login %s number %s", tt.login, tt.number)
+					t.Error(err)
+				}
+			}
+		})
+	}
+}
+
+func TestOrderReadOne(t *testing.T) {
+	tests := []struct {
+		name   string
+		number string
+	}{
+		{
+			name:   "read_order_123",
+			number: "123",
+		},
+		{
+			name:   "read_order_1234",
+			number: "1234",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			user, err := storage.OrderReadOne(tt.number)
+			if err != nil {
+				t.Error(err)
+			}
+			if user.Number != tt.number {
+				t.Errorf("want number %s, get login %s", user.Number, tt.number)
+			}
+		})
+	}
+}
+
+func TestOrderReadAllByUser(t *testing.T) {
+	tests := []struct {
+		name       string
+		user_login string
+	}{
+		{
+			name:       "read_orders_admin",
+			user_login: "admin",
+		},
+		{
+			name:       "read_orders_user1",
+			user_login: "user1",
+		},
+		{
+			name:       "read_orders_user2",
+			user_login: "user2",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			orders, err := storage.OrdersReadByLogin(tt.user_login)
+			if err != nil {
+				t.Error(err)
+			}
+			if len(orders) == 0 {
+				t.Errorf("Orders not found. User login: %s", tt.user_login)
+			}
+		})
+	}
+}

@@ -30,19 +30,19 @@ git fetch template && git checkout template/master .github
 ```
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
-Создание таблички. Будут созданы два пустых файла в ./migrations. Их необходимо заполнить нужными данными
+Создание таблички. Будут созданы два пустых файла в ./internal/storage/migrations. Их необходимо заполнить нужными данными
 ```
-migrate create -ext sql -dir migrations -seq create_users_table
+migrate create -ext sql -dir internal/storage/migrations -seq create_users_table
 ```
 Применить новую миграцию
 ```
-migrate -path migrations -database postgres://user:password@localhost:5432/dbname?sslmode=disable up
+migrate -path internal/storage/migrations -database postgres://user:password@localhost:5432/dbname?sslmode=disable up
 ```
 Откатить миграцию
 ```
-migrate -path migrations -database postgres://user:password@localhost:5432/dbname?sslmode=disable down 1
+migrate -path internal/storage/migrations -database postgres://user:password@localhost:5432/dbname?sslmode=disable down 1
 ```
 Добавить новую версию. Например имзенить тип колонки value в табличке balances
 ```
-migrate create -ext sql -dir migrations -seq change_value_type_in_balances
+migrate create -ext sql -dir internal/storage/migrations -seq change_value_type_in_balances
 ```

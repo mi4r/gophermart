@@ -21,6 +21,7 @@ type Order struct {
 	Status     OrderStatus `json:"status"`
 	Accrual    int64       `json:"accrual"`
 	UploadedAt time.Time   `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
+	UserLogin  string      `json:"-"`
 } //@name Order
 
 type Creds struct {
