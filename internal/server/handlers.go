@@ -203,5 +203,19 @@ func checkLuhn(orderID string) bool {
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [get]
 func (s *Server) userGetOrdersHandler(c echo.Context) error {
-	return nil
+	login, ok := auth.ValidateUserCookie(c)
+	if !ok {
+		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+
+	orders, err := s.storage.OrdersReadByLogin(login)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(orders) == 0 {
+		c.NoContent(http.StatusNoContent)
+	}
+
+	return c.JSON(http.StatusOK, orders)
 }
