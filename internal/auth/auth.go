@@ -13,19 +13,18 @@ import (
 
 const (
 	CookieName = "user_token"
-	SecretKey  = "super-secret-key" // Это ключ для подписи куки
 )
 
 // SignUser создает подпись для идентификатора пользователя.
-func SignUser(userLogin string) string {
-	h := hmac.New(sha256.New, []byte(SecretKey))
+func SignUser(userLogin, key string) string {
+	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(userLogin))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
 // GetUserCookie устанавливает пользователю подписанную куку с его идентификатором.
-func GetUserCookie(userLogin string) *http.Cookie {
-	signature := SignUser(userLogin)
+func GetUserCookie(userLogin, key string) *http.Cookie {
+	signature := SignUser(userLogin, key)
 	cookieValue := userLogin + "." + signature
 	cookie := &http.Cookie{
 		Name:     CookieName,
@@ -38,7 +37,7 @@ func GetUserCookie(userLogin string) *http.Cookie {
 }
 
 // ValidateUserCookie проверяет подлинность куки и возвращает идентификатор пользователя.
-func ValidateUserCookie(c echo.Context) (string, bool) {
+func ValidateUserCookie(c echo.Context, key string) (string, bool) {
 	cookie, err := c.Cookie(CookieName)
 	if err != nil {
 		return "", false
@@ -52,7 +51,7 @@ func ValidateUserCookie(c echo.Context) (string, bool) {
 	userLogin := parts[0]
 	signature := parts[1]
 
-	expectedSignature := SignUser(userLogin)
+	expectedSignature := SignUser(userLogin, key)
 	if hmac.Equal([]byte(expectedSignature), []byte(signature)) {
 		return userLogin, true
 	}

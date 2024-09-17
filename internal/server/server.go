@@ -52,13 +52,13 @@ func (s *Server) setRoutes() {
 	s.router.GET("/swagger/*", echoSwagger.WrapHandler)
 	s.router.GET("/ping", s.pingHandler)
 
-	// /api/user
-	s.router.POST("/api/user/register", s.userRegisterHandler)
-	s.router.POST("/api/user/login", s.userLoginHandler)
+	// Группа users
+	gUsers := s.router.Group("/api/user")
+	gUsers.POST("/register", s.userRegisterHandler)
+	gUsers.POST("/login", s.userLoginHandler)
+	gUsers.POST("/orders", s.userPostOrdersHandler)
+	gUsers.GET("/orders", s.userGetOrdersHandler)
 
-	// /api/user/orders
-	s.router.POST("/api/user/orders", s.userPostOrdersHandler)
-	s.router.GET("/api/user/orders", s.userGetOrdersHandler)
 }
 
 // TODO
