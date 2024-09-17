@@ -150,9 +150,11 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 	}
 
 	orderNumber := strings.TrimSpace(string(bodyContent))
+  
 	if !helper.IsLuhn(orderNumber) {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
+  
 	var emptyOrder storage.Order
 	storedOrder, err := s.storage.OrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
