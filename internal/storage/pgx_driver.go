@@ -115,7 +115,7 @@ func (d *pgxDriver) UserReadOne(login string) (User, error) {
 	var user User
 	if err := d.queryRow(ctx, `
 		SELECT login, password, balance FROM users WHERE login=$1
-		`, login).Scan(&user.Login, &user.Password, &user.Balance); err != nil {
+	`, login).Scan(&user.Login, &user.Password, &user.Balance); err != nil {
 		return user, err
 	}
 	return user, nil
@@ -167,13 +167,12 @@ func (d *pgxDriver) OrderCreate(login, number string) error {
 func (d *pgxDriver) OrderReadOne(number string) (Order, error) {
 	ctx := context.Background()
 	var o Order
-	var id int64
-	// if err := d.queryRow(ctx, `
-	// 	SELECT number, status, accrual, uploaded_at, user_login FROM orders WHERE number=$1
-	// 	`, number).Scan(
 	if err := d.queryRow(ctx, `
-		SELECT * FROM orders WHERE number=$1
-	`, number).Scan(&id,
+	SELECT number, status, accrual, uploaded_at, user_login
+	FROM orders
+		WHERE number = $1
+		LIMIT 1
+	`, number).Scan(
 		&o.Number, &o.Status, &o.Accrual,
 		&o.UploadedAt, &o.UserLogin,
 	); err != nil {
@@ -186,8 +185,11 @@ func (d *pgxDriver) OrdersReadByLogin(login string) ([]Order, error) {
 	var orders []Order
 	ctx := context.Background()
 	rows, err := d.queryRows(ctx, `
-	SELECT * FROM orders
-	`)
+	SELECT number, status, accrual, uploaded_at, user_login
+	FROM orders
+		WHERE user_login = $1
+		ORDER BY uploaded_at ASC
+	`, login)
 	if err != nil {
 		return orders, err
 	}
@@ -195,8 +197,7 @@ func (d *pgxDriver) OrdersReadByLogin(login string) ([]Order, error) {
 	var errs []error
 	for rows.Next() {
 		var o Order
-		var id int64
-		if err := rows.Scan(&id,
+		if err := rows.Scan(
 			&o.Number, &o.Status, &o.Accrual,
 			&o.UploadedAt, &o.UserLogin,
 		); err != nil {

@@ -32,6 +32,7 @@ type ServerConfig struct {
 	LogLevel             string
 	StoragePath          string
 	AccrualSystemAddress string
+	SecretKey            string
 }
 
 func NewServerConfig() ServerConfig {
@@ -44,6 +45,7 @@ func loadServerConfigFromEnv() ServerConfig {
 	c.ListenAddr = os.Getenv("RUN_ADDRESS")
 	c.StoragePath = os.Getenv("DATABASE_URI")
 	c.AccrualSystemAddress = os.Getenv("ACCRUAL_SYSTEM_ADDRESS")
+	c.SecretKey = os.Getenv("SECRET_KEY")
 	return c
 }
 
@@ -55,6 +57,7 @@ func loadServerConfigFromFlags() ServerConfig {
 	l := flag.String("l", "debug", "Logger Level")
 	a := flag.String("a", "", "Listen address with port")
 	r := flag.String("r", "", "Accrual system address")
+	k := flag.String("k", "", "Secret key for JWT")
 	flag.Parse()
 
 	c.StoragePath = ifEmpty(*d, confFromEnv.StoragePath)
@@ -62,6 +65,7 @@ func loadServerConfigFromFlags() ServerConfig {
 	c.AccrualSystemAddress = ifEmpty(*r, confFromEnv.AccrualSystemAddress)
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
+	c.SecretKey = *k
 
 	return c
 }

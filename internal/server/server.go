@@ -12,6 +12,11 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
+const (
+	gophermart    = "GOPHERMART"
+	accrualSystem = "ACCRUAL_SYSTEM"
+)
+
 type Server struct {
 	config  config.ServerConfig
 	storage storage.Storage
@@ -42,23 +47,27 @@ func (s *Server) Shutdown() {
 
 func (s *Server) Configure() {
 	s.setMiddlewares()
-	s.setRoutes()
+	s.setRoutesGophemart()
 	s.setStorage()
 	// ...
 }
 
-func (s *Server) setRoutes() {
+func (s *Server) setRoutesGophemart() {
 	// swagger
 	s.router.GET("/swagger/*", echoSwagger.WrapHandler)
 	s.router.GET("/ping", s.pingHandler)
 
-	// /api/user
-	s.router.POST("/api/user/register", s.userRegisterHandler)
-	s.router.POST("/api/user/login", s.userLoginHandler)
+	// Группа users
+	gUsers := s.router.Group("/api/user")
+	gUsers.POST("/register", s.userRegisterHandler)
+	gUsers.POST("/login", s.userLoginHandler)
+	gUsers.POST("/orders", s.userPostOrdersHandler)
+	gUsers.GET("/orders", s.userGetOrdersHandler)
 
-	// /api/user/orders
-	s.router.POST("/api/user/orders", s.userPostOrdersHandler)
-	s.router.GET("/api/user/orders", s.userGetOrdersHandler)
+}
+
+func (s *Server) setRoutesAccrualSystem() {
+
 }
 
 // TODO
@@ -86,12 +95,14 @@ func (s *Server) setLogger() {
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error == nil {
 				slog.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
+					slog.String("service", gophermart),
 					slog.String("uri", v.URI),
 					slog.String("method", v.Method),
 					slog.Int("status", v.Status),
 				)
 			} else {
 				slog.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
+					slog.String("service", gophermart),
 					slog.String("uri", v.URI),
 					slog.String("method", v.Method),
 					slog.Int("status", v.Status),

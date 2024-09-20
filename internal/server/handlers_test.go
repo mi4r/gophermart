@@ -6,8 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/mi4r/gophermart/internal/config"
+	"github.com/mi4r/gophermart/internal/mocks"
 	"github.com/mi4r/gophermart/internal/storage"
 
 	"github.com/labstack/echo/v4"
@@ -15,41 +18,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockStorage — это мок, который реализует интерфейс Storage.
-type MockStorage struct {
-	mock.Mock
-}
-
-// UserCreate — мок реализация метода для создания пользователя.
-func (m *MockStorage) UserCreate(user storage.User) error {
-	args := m.Called(user)
-	return args.Error(0)
-}
-
-// UserReadOne — мок реализация метода для чтения данных пользователя.
-func (m *MockStorage) UserReadOne(login string) (storage.User, error) {
-	args := m.Called(login)
-	return args.Get(0).(storage.User), args.Error(1)
-}
-
-func (m *MockStorage) UserReadAll() ([]storage.User, error) {
-	args := m.Called()
-	return args.Get(0).([]storage.User), args.Error(1)
-}
-
-func (m *MockStorage) Open() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *MockStorage) Close() {
-}
-
 func TestUserRegisterHandler(t *testing.T) {
-	e := echo.New()
-	mockStorage := new(MockStorage)
-	server := &Server{storage: mockStorage}
-
+	// Примерно так делается
+	ctrl := gomock.NewController(t)
+	m := mocks.NewMockStorage(ctrl)
+	c := config.ServerConfig{}
+	server := NewServer(c, m)
 	tests := []struct {
 		name           string
 		requestBody    string
@@ -98,9 +72,10 @@ func TestUserRegisterHandler(t *testing.T) {
 }
 
 func TestUserLoginHandler(t *testing.T) {
-	e := echo.New()
-	mockStorage := new(MockStorage)
-	server := &Server{storage: mockStorage}
+	ctrl := gomock.NewController(t)
+	m := mocks.NewMockStorage(ctrl)
+	c := config.ServerConfig{}
+	server := NewServer(c, m)
 
 	tests := []struct {
 		name            string

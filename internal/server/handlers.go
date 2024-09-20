@@ -4,13 +4,13 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/mi4r/gophermart/internal/storage"
+	"github.com/mi4r/gophermart/lib/helper"
 
 	"github.com/mi4r/gophermart/internal/auth"
 )
@@ -78,7 +78,7 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
-	c.SetCookie(auth.GetUserCookie(user.Login))
+	c.SetCookie(auth.GetUserCookie(user.Login, s.config.SecretKey))
 	return c.String(http.StatusOK, successUserLogin)
 }
 
@@ -115,7 +115,7 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 		return c.String(http.StatusUnauthorized, errPasswordInvalid.Error())
 	}
 
-	c.SetCookie(auth.GetUserCookie(user.Login))
+	c.SetCookie(auth.GetUserCookie(user.Login, s.config.SecretKey))
 	return c.String(http.StatusOK, successUserLogin)
 }
 
@@ -136,7 +136,7 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [post]
 func (s *Server) userPostOrdersHandler(c echo.Context) error {
-	login, ok := auth.ValidateUserCookie(c)
+	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
@@ -150,9 +150,11 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 	}
 
 	orderNumber := strings.TrimSpace(string(bodyContent))
-	if !checkLuhn(orderNumber) {
+  
+	if !helper.IsLuhn(orderNumber) {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
+  
 	var emptyOrder storage.Order
 	storedOrder, err := s.storage.OrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
@@ -177,26 +179,6 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 	return c.String(http.StatusCreated, orderAccepted)
 }
 
-func checkLuhn(orderID string) bool {
-	sum := 0
-	nDigits := len(orderID)
-	parity := nDigits % 2
-	for i := 0; i < nDigits; i++ {
-		digit, err := strconv.Atoi(string(orderID[i]))
-		if err != nil {
-			return false
-		}
-		if i%2 == parity {
-			digit *= 2
-			if digit > 9 {
-				digit -= 9
-			}
-		}
-		sum += digit
-	}
-	return (sum % 10) == 0
-}
-
 // Orders get
 // @Summary Получение списка загруженных номеров заказов
 // @Description Хендлер доступен только авторизованному пользователю
@@ -211,5 +193,19 @@ func checkLuhn(orderID string) bool {
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [get]
 func (s *Server) userGetOrdersHandler(c echo.Context) error {
-	return nil
+	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
+	if !ok {
+		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+
+	orders, err := s.storage.OrdersReadByLogin(login)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(orders) == 0 {
+		c.NoContent(http.StatusNoContent)
+	}
+
+	return c.JSON(http.StatusOK, orders)
 }

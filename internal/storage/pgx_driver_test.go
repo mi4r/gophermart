@@ -314,6 +314,7 @@ func TestOrderReadAllByUser(t *testing.T) {
 			if len(orders) == 0 {
 				t.Errorf("Orders not found. User login: %s", tt.user_login)
 			}
+			t.Logf("Order user %s %+v", tt.user_login, orders)
 		})
 	}
 }
