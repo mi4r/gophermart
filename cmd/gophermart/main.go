@@ -22,13 +22,19 @@ import (
 // @host localhost:8080
 // @BasePath /
 func main() {
-	config := config.NewServerConfig()
+	config := config.NewGophermart()
 	logger.InitLogger(config.LogLevel)
 	storage := storage.NewStorage(config.DriverType, config.StoragePath)
-	server := server.NewServer(
-		config, storage,
+	core := server.NewServer(
+		server.Config{
+			ServiceName: server.GophermartName,
+			Listen:      config.ListenAddr,
+			SecretKey:   config.SecretKey,
+		}, storage,
 	)
-	go server.Start()
+	service := server.NewGophermart(core)
+	service.SetRoutes()
+	go service.Server.Start()
 
 	// Канал для сигнала завершения
 	done := make(chan struct{})
@@ -40,6 +46,5 @@ func main() {
 	sig := <-sigChan
 	slog.Debug("received signal", slog.String("signal", sig.String()))
 	close(done)
-	server.Shutdown()
-
+	service.Server.Shutdown()
 }
