@@ -60,6 +60,64 @@ func (mr *MockStorageMockRecorder) Open() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Open", reflect.TypeOf((*MockStorage)(nil).Open))
 }
 
+// OrderCreate mocks base method.
+func (m *MockStorage) OrderCreate(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderCreate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OrderCreate indicates an expected call of OrderCreate.
+func (mr *MockStorageMockRecorder) OrderCreate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderCreate", reflect.TypeOf((*MockStorage)(nil).OrderCreate), arg0, arg1)
+}
+
+// OrderReadOne mocks base method.
+func (m *MockStorage) OrderReadOne(arg0 string) (storage.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderReadOne", arg0)
+	ret0, _ := ret[0].(storage.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrderReadOne indicates an expected call of OrderReadOne.
+func (mr *MockStorageMockRecorder) OrderReadOne(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderReadOne", reflect.TypeOf((*MockStorage)(nil).OrderReadOne), arg0)
+}
+
+// OrdersReadByLogin mocks base method.
+func (m *MockStorage) OrdersReadByLogin(arg0 string) ([]storage.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersReadByLogin", arg0)
+	ret0, _ := ret[0].([]storage.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrdersReadByLogin indicates an expected call of OrdersReadByLogin.
+func (mr *MockStorageMockRecorder) OrdersReadByLogin(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersReadByLogin", reflect.TypeOf((*MockStorage)(nil).OrdersReadByLogin), arg0)
+}
+
+// Ping mocks base method.
+func (m *MockStorage) Ping() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ping")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ping indicates an expected call of Ping.
+func (mr *MockStorageMockRecorder) Ping() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockStorage)(nil).Ping))
+}
+
 // UserCreate mocks base method.
 func (m *MockStorage) UserCreate(arg0 storage.User) error {
 	m.ctrl.T.Helper()

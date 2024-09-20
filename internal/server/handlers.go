@@ -4,31 +4,30 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/mi4r/gophermart/internal/storage"
+	"github.com/mi4r/gophermart/lib/helper"
 
 	"github.com/mi4r/gophermart/internal/auth"
 )
 
 const (
-	successUserLogin   string = "User has been successfully registered and authenticated"
-	orderAlreadyUpload string = "Order number already uploaded by this user"
-	orderAccepted      string = "Order number accepted for processing"
+	successUserLogin   string = "user has been successfully registered and authenticated"
+	orderAlreadyUpload string = "order number already uploaded by this user"
+	orderAccepted      string = "order number accepted for processing"
 )
 
 var (
-	errEmptyLoginOrPassword = errors.New("Login or password cannot be empty")
-	errLoginIsExists        = errors.New("Login already exists")
-	errDublicateKeys        = errors.New("Duplicate key value")
-	errPasswordInvalid      = errors.New("Invalid password")
-	errUnauthorized         = errors.New("User is not authenticated")
-	errInvalidOrderID       = errors.New("Invalid order number format")
-	errOrderUploadByAnother = errors.New("Order number already uploaded by another user")
+	errEmptyLoginOrPassword = errors.New("login or password cannot be empty")
+	errLoginIsExists        = errors.New("login already exists")
+	errPasswordInvalid      = errors.New("invalid password")
+	errUnauthorized         = errors.New("user is not authenticated")
+	errInvalidOrderID       = errors.New("invalid order number format")
+	errOrderUploadByAnother = errors.New("order number already uploaded by another user")
 )
 
 // Ping
@@ -37,7 +36,11 @@ var (
 // @Success 200 {string} pong
 // @Router /ping [get]
 func (s *Server) pingHandler(c echo.Context) error {
-	return c.String(200, "pong")
+	storageOK := "pong"
+	if err := s.storage.Ping(); err != nil {
+		storageOK = err.Error()
+	}
+	return c.JSON(http.StatusOK, storageOK)
 }
 
 // User register
@@ -75,7 +78,7 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
-	c.SetCookie(auth.GetUserCookie(user.Login))
+	c.SetCookie(auth.GetUserCookie(user.Login, s.config.SecretKey))
 	return c.String(http.StatusOK, successUserLogin)
 }
 
@@ -112,7 +115,7 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 		return c.String(http.StatusUnauthorized, errPasswordInvalid.Error())
 	}
 
-	c.SetCookie(auth.GetUserCookie(user.Login))
+	c.SetCookie(auth.GetUserCookie(user.Login, s.config.SecretKey))
 	return c.String(http.StatusOK, successUserLogin)
 }
 
@@ -133,60 +136,47 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [post]
 func (s *Server) userPostOrdersHandler(c echo.Context) error {
-	login, ok := auth.ValidateUserCookie(c)
+	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	orderNumReader := c.Request().Body
-	defer orderNumReader.Close()
+	bodyReader := c.Request().Body
+	defer bodyReader.Close()
 
-	orderNum, err := io.ReadAll(orderNumReader)
-	if err != nil || len(orderNum) == 0 {
+	bodyContent, err := io.ReadAll(bodyReader)
+	if err != nil || len(bodyContent) == 0 {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	orderID := strings.TrimSpace(string(orderNum))
-	if !checkLuhn(orderID) {
+	orderNumber := strings.TrimSpace(string(bodyContent))
+  
+	if !helper.IsLuhn(orderNumber) {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
-
-	storedOrder, err := s.storage.OrderReadOne(orderID)
+  
+	var emptyOrder storage.Order
+	storedOrder, err := s.storage.OrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	if storedOrder != nil && storedOrder.UserLogin != login {
-		return c.String(http.StatusConflict, errOrderUploadByAnother.Error())
-	}
-	if storedOrder != nil && storedOrder.UserLogin == login {
-		return c.String(http.StatusOK, orderAlreadyUpload)
+
+	// Если заказ был найден
+	if storedOrder != emptyOrder {
+		// Проверка на то что заказ уже не создан другим пользователем
+		if storedOrder.UserLogin != login {
+			return c.String(http.StatusConflict, errOrderUploadByAnother.Error())
+			// Проверка на то что заказ уже не был создан этим же пользователем
+		} else if storedOrder.UserLogin == login {
+			return c.String(http.StatusOK, orderAlreadyUpload)
+		}
 	}
 
-	err = s.storage.OrderCreate(login, orderID)
+	err = s.storage.OrderCreate(login, orderNumber)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	return c.String(http.StatusCreated, orderAccepted)
-}
-
-func checkLuhn(orderID string) bool {
-	sum := 0
-	nDigits := len(orderID)
-	parity := nDigits % 2
-	for i := 0; i < nDigits; i++ {
-		digit, err := strconv.Atoi(string(orderID[i]))
-		if err != nil {
-			return false
-		}
-		if i%2 == parity {
-			digit *= 2
-			if digit > 9 {
-				digit -= 9
-			}
-		}
-		sum += digit
-	}
-	return (sum % 10) == 0
 }
 
 // Orders get
@@ -203,7 +193,7 @@ func checkLuhn(orderID string) bool {
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [get]
 func (s *Server) userGetOrdersHandler(c echo.Context) error {
-	login, ok := auth.ValidateUserCookie(c)
+	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
