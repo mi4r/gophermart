@@ -288,33 +288,33 @@ func TestOrderReadOne(t *testing.T) {
 
 func TestOrderReadAllByUser(t *testing.T) {
 	tests := []struct {
-		name       string
-		user_login string
+		name      string
+		userLogin string
 	}{
 		{
-			name:       "read_orders_admin",
-			user_login: "admin",
+			name:      "read_orders_admin",
+			userLogin: "admin",
 		},
 		{
-			name:       "read_orders_user1",
-			user_login: "user1",
+			name:      "read_orders_user1",
+			userLogin: "user1",
 		},
 		{
-			name:       "read_orders_user2",
-			user_login: "user2",
+			name:      "read_orders_user2",
+			userLogin: "user2",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			orders, err := storage.OrdersReadByLogin(tt.user_login)
+			orders, err := storage.OrdersReadByLogin(tt.userLogin)
 			if err != nil {
 				t.Error(err)
 			}
 			if len(orders) == 0 {
-				t.Errorf("Orders not found. User login: %s", tt.user_login)
+				t.Errorf("Orders not found. User login: %s", tt.userLogin)
 			}
-			t.Logf("Order user %s %+v", tt.user_login, orders)
+			t.Logf("Order user %s %+v", tt.userLogin, orders)
 		})
 	}
 }
