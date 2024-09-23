@@ -22,7 +22,7 @@ import (
 // @host localhost:8080
 // @BasePath /
 func main() {
-	config := config.NewGophermart()
+	config := config.NewGophermartConfig()
 	logger.InitLogger(config.LogLevel)
 	storage := storage.NewStorage(config.DriverType, config.StoragePath)
 	core := server.NewServer(

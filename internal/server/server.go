@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/mi4r/gophermart/internal/storage"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 const (
@@ -51,7 +52,7 @@ func (s *Server) Shutdown() {
 
 func (s *Server) Configure() {
 	s.setMiddlewares()
-	// s.setRoutes()
+	s.setDefaultRoutes()
 	s.setStorage()
 	// ...
 }
@@ -63,6 +64,12 @@ func (s *Server) setStorage() {
 		s.Shutdown()
 	}
 
+}
+
+func (s *Server) setDefaultRoutes() {
+	// swagger
+	s.router.GET("/swagger/*", echoSwagger.WrapHandler)
+	s.router.GET("/ping", s.pingHandler)
 }
 
 func (s *Server) setMiddlewares() {

@@ -26,7 +26,7 @@ func ifEmpty(fromFlag, fromEnv string) string {
 	return fromFlag
 }
 
-type Gophermart struct {
+type GophermartConfig struct {
 	ListenAddr           string
 	DriverType           string
 	LogLevel             string
@@ -35,13 +35,13 @@ type Gophermart struct {
 	SecretKey            string
 }
 
-func NewGophermart() Gophermart {
+func NewGophermartConfig() GophermartConfig {
 	return loadGophermartFromFlags()
 }
 
 // Первым делом парсим из окружения
-func loadGophermartFromEnv() Gophermart {
-	var c Gophermart
+func loadGophermartFromEnv() GophermartConfig {
+	var c GophermartConfig
 	c.ListenAddr = os.Getenv("RUN_ADDRESS")
 	c.StoragePath = os.Getenv("DATABASE_URI")
 	c.AccrualSystemAddress = os.Getenv("ACCRUAL_SYSTEM_ADDRESS")
@@ -50,9 +50,9 @@ func loadGophermartFromEnv() Gophermart {
 }
 
 // Затем парсим из флагов. Если есть из флага то заменяем
-func loadGophermartFromFlags() Gophermart {
+func loadGophermartFromFlags() GophermartConfig {
 	confFromEnv := loadGophermartFromEnv()
-	var c Gophermart
+	var c GophermartConfig
 	d := flag.String("d", "", "Path to store")
 	l := flag.String("l", "debug", "Logger Level")
 	a := flag.String("a", "", "Listen address with port")
