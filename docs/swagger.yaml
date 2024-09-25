@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  Balance:
+    properties:
+      current:
+        type: number
+      withdrawn:
+        type: number
+    type: object
   Creds:
     properties:
       login:
@@ -10,12 +17,14 @@ definitions:
   Order:
     properties:
       accrual:
-        type: integer
+        type: number
       number:
         example: "12345678903"
         type: string
       status:
         $ref: '#/definitions/storage.OrderStatus'
+      sum:
+        type: number
       uploaded_at:
         example: "2020-12-10T15:15:45+03:00"
         format: date-time
@@ -40,6 +49,29 @@ info:
   title: Gophermart
   version: "1.0"
 paths:
+  /api/user/balance:
+    get:
+      description: |-
+        Хендлер доступен только авторизованному пользователю.
+        В ответе должны содержаться данные о текущей сумме баллов лояльности,
+        а также сумме использованных за весь период регистрации баллов.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            $ref: '#/definitions/Balance'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Пользователь
   /api/user/login:
     post:
       consumes:
