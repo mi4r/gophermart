@@ -209,3 +209,14 @@ func (d *pgxDriver) OrdersReadByLogin(login string) ([]Order, error) {
 
 	return orders, errors.Join(errs...)
 }
+
+func (d *pgxDriver) GetUserBalance(login string) (Balance, error) {
+	ctx := context.Background()
+	query := `SELECT balance, withdrawn FROM users WHERE login = $1;`
+	var user User
+	err := d.queryRow(ctx, query, login).Scan(&user.Current, &user.Withdrawn)
+	if err != nil {
+		return Balance{}, err
+	}
+	return user.GetBalance(), nil
+}

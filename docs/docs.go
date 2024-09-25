@@ -15,6 +15,37 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/user/balance": {
+            "get": {
+                "description": "Хендлер доступен только авторизованному пользователю.\nВ ответе должны содержаться данные о текущей сумме баллов лояльности,\nа также сумме использованных за весь период регистрации баллов.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователь"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса",
+                        "schema": {
+                            "$ref": "#/definitions/Balance"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/user/login": {
             "post": {
                 "description": "Для передачи аутентификационных данных используется механизм cookies",
@@ -246,6 +277,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "Balance": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "type": "number"
+                },
+                "withdrawn": {
+                    "type": "number"
+                }
+            }
+        },
         "Creds": {
             "type": "object",
             "properties": {
@@ -261,7 +303,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "accrual": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "number": {
                     "type": "string",
@@ -269,6 +311,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/storage.OrderStatus"
+                },
+                "sum": {
+                    "type": "number"
                 },
                 "uploaded_at": {
                     "type": "string",

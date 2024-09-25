@@ -150,11 +150,11 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 	}
 
 	orderNumber := strings.TrimSpace(string(bodyContent))
-  
+
 	if !helper.IsLuhn(orderNumber) {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
-  
+
 	var emptyOrder storage.Order
 	storedOrder, err := s.storage.OrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
@@ -208,4 +208,29 @@ func (s *Server) userGetOrdersHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, orders)
+}
+
+// Balance get
+// @Summary
+// @Description Хендлер доступен только авторизованному пользователю.
+// @Description В ответе должны содержаться данные о текущей сумме баллов лояльности,
+// @Description а также сумме использованных за весь период регистрации баллов.
+// @Tags Пользователь
+// @Produce json
+// @Success 200 {object} Balance "Успешная обработка запроса"
+// @Failure 401 {string} string "Пользователь не авторизован"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/user/balance [get]
+func (s *Server) userGetBalance(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
+	if !ok {
+		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+
+	balance, err := s.storage.GetUserBalance(login)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, balance)
 }
