@@ -12,8 +12,6 @@ type Storage interface {
 	OrderCreate(login, number string) error
 	OrderReadOne(number string) (Order, error)
 	OrdersReadByLogin(login string) ([]Order, error)
-
-	GetUserBalance(login string) (Balance, error)
 }
 
 func NewStorage(driverType string, path string) Storage {

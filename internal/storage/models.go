@@ -17,12 +17,13 @@ const (
 )
 
 type Order struct {
-	Number     string      `json:"number" example:"12345678903"`
-	Status     OrderStatus `json:"status"`
-	Accrual    float64     `json:"accrual,omitempty"`
-	Sum        float64     `json:"sum,omitempty"`
-	UploadedAt time.Time   `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
-	UserLogin  string      `json:"-"`
+	Number      string      `json:"number" example:"12345678903"`
+	Status      OrderStatus `json:"status"`
+	Accrual     float64     `json:"accrual,omitempty"`
+	Sum         float64     `json:"sum,omitempty"`
+	UploadedAt  time.Time   `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
+	UserLogin   string      `json:"-"`
+	IsWithdrawn bool        `json:"is_withdrawn"`
 } //@name Order
 
 type Creds struct {
@@ -30,14 +31,14 @@ type Creds struct {
 	Password string `json:"password"`
 } // @name Creds
 
-type Balance struct {
-	Current   float64 `json:"current"`
+type Wallet struct {
+	Balance   float64 `json:"balance"`
 	Withdrawn float64 `json:"withdrawn"`
-} //@name Balance
+} //@name Wallet
 
 type User struct {
 	Creds
-	Balance
+	Wallet
 } //@name User
 
 func NewUserFromCreds(creds Creds) (User, error) {
@@ -53,12 +54,8 @@ func NewUserFromCreds(creds Creds) (User, error) {
 	}, nil
 }
 
-func (u *User) GetBalance() Balance {
-	return u.Balance
-}
-
-func (u *User) SetBalance(b Balance) {
-	u.Balance = b
+func (u *User) GetBalance() Wallet {
+	return u.Wallet
 }
 
 func (c *Creds) IsEmpty() bool {

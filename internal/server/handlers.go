@@ -217,7 +217,7 @@ func (s *Server) userGetOrdersHandler(c echo.Context) error {
 // @Description а также сумме использованных за весь период регистрации баллов.
 // @Tags Пользователь
 // @Produce json
-// @Success 200 {object} Balance "Успешная обработка запроса"
+// @Success 200 {object} Wallet "Успешная обработка запроса"
 // @Failure 401 {string} string "Пользователь не авторизован"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/balance [get]
@@ -227,10 +227,10 @@ func (s *Server) userGetBalance(c echo.Context) error {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	balance, err := s.storage.GetUserBalance(login)
+	user, err := s.storage.UserReadOne(login)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, balance)
+	return c.JSON(http.StatusOK, user.GetBalance())
 }
