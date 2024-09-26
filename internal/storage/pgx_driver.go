@@ -14,10 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-)
-
-const (
-	MigrDirNameTest string = "migrations"
+	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 )
 
 type pgxDriver struct {
@@ -59,11 +56,14 @@ func (d *pgxDriver) Open() error {
 		return err
 	}
 
+	return nil
+}
+
+func (d *pgxDriver) Migrate(migrDirName string) {
 	// Try auto-migration
-	if err := d.autoMigrate(d.isTest); err != nil {
+	if err := d.autoMigrate(migrDirName, d.isTest); err != nil {
 		slog.Warn("migration error", slog.String("err", err.Error()))
 	}
-	return nil
 }
 
 func (d *pgxDriver) Ping() error {
@@ -71,15 +71,15 @@ func (d *pgxDriver) Ping() error {
 }
 
 // Автоматическая миграция базы. Думаю прикрутить ключ при запуске
-func (d *pgxDriver) autoMigrate(isTest bool) error {
+func (d *pgxDriver) autoMigrate(migrDirName string, isTest bool) error {
 	curDirAbs, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 	// Хз на винде не хочет работать
-	MigrDirName := path.Join("internal", "storage", MigrDirNameTest)
+	MigrDirName := path.Join("internal", "storage", migrDirName, "migrations")
 	if isTest {
-		MigrDirName = MigrDirNameTest
+		MigrDirName = migrDirName
 	}
 	migrDirAbsPath := path.Join(curDirAbs, MigrDirName)
 	slog.Debug("migration init", slog.String("path", migrDirAbsPath))
@@ -97,7 +97,7 @@ func (d *pgxDriver) Close() {
 	d.connPool.Close()
 }
 
-func (d *pgxDriver) UserCreate(user User) error {
+func (d *pgxDriver) UserCreate(user storagemart.User) error {
 	_, err := d.exec(context.Background(),
 		`
 	INSERT INTO users (login, password)
@@ -110,9 +110,9 @@ func (d *pgxDriver) UserCreate(user User) error {
 	return nil
 }
 
-func (d *pgxDriver) UserReadOne(login string) (User, error) {
+func (d *pgxDriver) UserReadOne(login string) (storagemart.User, error) {
 	ctx := context.Background()
-	var user User
+	var user storagemart.User
 	if err := d.queryRow(ctx, `
 		SELECT login, password, current, withdrawn FROM users WHERE login=$1
 	`, login).Scan(&user.Login, &user.Password, &user.Current, &user.Withdrawn); err != nil {
@@ -121,8 +121,8 @@ func (d *pgxDriver) UserReadOne(login string) (User, error) {
 	return user, nil
 }
 
-func (d *pgxDriver) UserReadAll() ([]User, error) {
-	var users []User
+func (d *pgxDriver) UserReadAll() ([]storagemart.User, error) {
+	var users []storagemart.User
 	ctx := context.Background()
 	rows, err := d.queryRows(ctx, `
 	SELECT login, password, current, withdrawn FROM users
@@ -133,7 +133,7 @@ func (d *pgxDriver) UserReadAll() ([]User, error) {
 	defer rows.Close()
 	var errs []error
 	for rows.Next() {
-		var user User
+		var user storagemart.User
 		if err := rows.Scan(&user.Login, &user.Password, &user.Current, &user.Withdrawn); err != nil {
 			slog.Error("scan error", slog.String("err", err.Error()))
 			errs = append(errs, err)
@@ -142,14 +142,6 @@ func (d *pgxDriver) UserReadAll() ([]User, error) {
 	}
 
 	return users, errors.Join(errs...)
-}
-
-func (d *pgxDriver) UserUpdate(user User) error {
-	return nil
-}
-
-func (d *pgxDriver) UserDelete(user User) error {
-	return nil
 }
 
 func (d *pgxDriver) OrderCreate(login, number string) error {
@@ -164,9 +156,9 @@ func (d *pgxDriver) OrderCreate(login, number string) error {
 	return nil
 }
 
-func (d *pgxDriver) OrderReadOne(number string) (Order, error) {
+func (d *pgxDriver) OrderReadOne(number string) (storagemart.Order, error) {
 	ctx := context.Background()
-	var o Order
+	var o storagemart.Order
 	if err := d.queryRow(ctx, `
 	SELECT number, status, accrual, uploaded_at, user_login
 	FROM orders
@@ -181,8 +173,8 @@ func (d *pgxDriver) OrderReadOne(number string) (Order, error) {
 	return o, nil
 }
 
-func (d *pgxDriver) OrdersReadByLogin(login string) ([]Order, error) {
-	var orders []Order
+func (d *pgxDriver) OrdersReadByLogin(login string) ([]storagemart.Order, error) {
+	var orders []storagemart.Order
 	ctx := context.Background()
 	rows, err := d.queryRows(ctx, `
 	SELECT number, status, accrual, uploaded_at, user_login
@@ -196,7 +188,7 @@ func (d *pgxDriver) OrdersReadByLogin(login string) ([]Order, error) {
 	defer rows.Close()
 	var errs []error
 	for rows.Next() {
-		var o Order
+		var o storagemart.Order
 		if err := rows.Scan(
 			&o.Number, &o.Status, &o.Accrual,
 			&o.UploadedAt, &o.UserLogin,

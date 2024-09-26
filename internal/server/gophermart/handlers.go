@@ -1,4 +1,4 @@
-package server
+package servermart
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
-	"github.com/mi4r/gophermart/internal/storage"
+	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 	"github.com/mi4r/gophermart/lib/helper"
 
 	"github.com/mi4r/gophermart/internal/auth"
@@ -35,7 +35,7 @@ var (
 // @Tags Разное
 // @Success 200 {string} pong
 // @Router /ping [get]
-func (s *Server) pingHandler(c echo.Context) error {
+func (s *Gophermart) pingHandler(c echo.Context) error {
 	storageOK := "pong"
 	if err := s.storage.Ping(); err != nil {
 		storageOK = err.Error()
@@ -54,8 +54,8 @@ func (s *Server) pingHandler(c echo.Context) error {
 // @Failure 400 {string} string "Неверный формат запроса"
 // @Failure 409 {string} string "Логин уже занят"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
-func (s *Server) userRegisterHandler(c echo.Context) error {
-	var creds storage.Creds
+func (s *Gophermart) userRegisterHandler(c echo.Context) error {
+	var creds storagemart.Creds
 	if err := c.Bind(&creds); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -64,7 +64,7 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, errEmptyLoginOrPassword.Error())
 	}
 
-	user, err := storage.NewUserFromCreds(creds)
+	user, err := storagemart.NewUserFromCreds(creds)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -78,7 +78,7 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
-	c.SetCookie(auth.GetUserCookie(user.Login, s.config.SecretKey))
+	c.SetCookie(auth.GetUserCookie(user.Login, s.Config.SecretKey))
 	return c.String(http.StatusOK, successUserLogin)
 }
 
@@ -94,8 +94,8 @@ func (s *Server) userRegisterHandler(c echo.Context) error {
 // @Failure 401 {string} string "Неверная пара логин/пароль"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/login [post]
-func (s *Server) userLoginHandler(c echo.Context) error {
-	var creds storage.Creds
+func (s *Gophermart) userLoginHandler(c echo.Context) error {
+	var creds storagemart.Creds
 	if err := c.Bind(&creds); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -115,7 +115,7 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 		return c.String(http.StatusUnauthorized, errPasswordInvalid.Error())
 	}
 
-	c.SetCookie(auth.GetUserCookie(user.Login, s.config.SecretKey))
+	c.SetCookie(auth.GetUserCookie(user.Login, s.Config.SecretKey))
 	return c.String(http.StatusOK, successUserLogin)
 }
 
@@ -135,8 +135,8 @@ func (s *Server) userLoginHandler(c echo.Context) error {
 // @Failure 422 {string} string "Неверный формат номера заказа"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [post]
-func (s *Server) userPostOrdersHandler(c echo.Context) error {
-	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
+func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
@@ -155,7 +155,7 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
 
-	var emptyOrder storage.Order
+	var emptyOrder storagemart.Order
 	storedOrder, err := s.storage.OrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -192,8 +192,8 @@ func (s *Server) userPostOrdersHandler(c echo.Context) error {
 // @Failure 401 {string} string "Пользователь не авторизован"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/orders [get]
-func (s *Server) userGetOrdersHandler(c echo.Context) error {
-	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
+func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
@@ -221,8 +221,8 @@ func (s *Server) userGetOrdersHandler(c echo.Context) error {
 // @Failure 401 {string} string "Пользователь не авторизован"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/balance [get]
-func (s *Server) userGetBalance(c echo.Context) error {
-	login, ok := auth.ValidateUserCookie(c, s.config.SecretKey)
+func (s *Gophermart) userGetBalance(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}

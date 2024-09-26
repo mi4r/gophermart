@@ -4,6 +4,9 @@ version: "3"
 dotenv:
   - .env # Должен быть файл .env Где указаны нужные переменные окружения
 
+vars:
+  migrdirG: internal/storage/gophermart/migrations
+  migrdirA: internal/storage/accrual/migrations
 tasks:
   statictest:
     cmds:
@@ -11,18 +14,31 @@ tasks:
   statictest-win:
     cmds:
       - go vet -vettool=./statictest.exe ./...
-  migration-up:
+  mg-up:
     cmds:
-      - migrate -path internal/storage/migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
-  migration-up-1:
+      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
+  mg-up-1:
     cmds:
-      - migrate -path internal/storage/migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up 1
-  migration-down-1:
+      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up 1
+  mg-down-1:
     cmds:
-      - migrate -path internal/storage/migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable down 1
-  migration-drop:
+      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable down 1
+  mg-drop:
     cmds:
-      - migrate -path internal/storage/migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
+      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
+  ma-up:
+    cmds:
+      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable up
+  ma-up-1:
+    cmds:
+      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable up 1
+  ma-down-1:
+    cmds:
+      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable down 1
+  ma-drop:
+    cmds:
+      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable drop
+  # OTHER
   build:
     cmds:
       - "go build -o cmd/accrual/accrual cmd/accrual/main.go"

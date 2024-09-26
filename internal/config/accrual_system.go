@@ -10,6 +10,7 @@ type AccSysConfig struct {
 	DriverType  string
 	LogLevel    string
 	StoragePath string
+	MigrDirName string
 }
 
 func NewAccSysConfig() AccSysConfig {
@@ -38,6 +39,8 @@ func loadAccSysConfigFromFlags() AccSysConfig {
 
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
+
+	c.MigrDirName = migrDirNameAccrual
 
 	return c
 }
