@@ -1,6 +1,9 @@
 package storage
 
-import storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
+import (
+	"github.com/mi4r/gophermart/internal/storage/drivers"
+	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
+)
 
 type Storage interface {
 	Open() error
@@ -20,21 +23,21 @@ type StorageGophermart interface {
 	OrdersReadByLogin(login string) ([]storagemart.Order, error)
 }
 
+func NewStorageGophermart(driverType string, path string) StorageGophermart {
+	switch driverType {
+	default:
+		return drivers.NewPgxDriver(path)
+	}
+}
+
 type StorageAccrualSystem interface {
 	Storage
 	// OrderProcessing(number string) error
 }
 
-func NewStorageGophermart(driverType string, path string) StorageGophermart {
-	switch driverType {
-	default:
-		return NewPgxDriver(path)
-	}
-}
-
 func NewStorageAccrual(driverType string, path string) StorageAccrualSystem {
 	switch driverType {
 	default:
-		return NewPgxDriver(path)
+		return drivers.NewPgxDriver(path)
 	}
 }

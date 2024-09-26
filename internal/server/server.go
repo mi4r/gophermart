@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	GophermartName    = "GOPHERMART"
-	AccrualSystemName = "ACCRUAL_SYS"
+	GophermartName = "GOPHERMART"
+	AccrualName    = "ACCRUAL"
 )
 
 type Config struct {

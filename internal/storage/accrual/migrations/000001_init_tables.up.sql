@@ -4,7 +4,7 @@ CREATE TABLE rewards (
     id SERIAL PRIMARY KEY,
     match VARCHAR(255) UNIQUE NOT NULL,
     reward DOUBLE PRECISION NOT NULL,
-    reward_type VARCHAR(2) DEFAULT "%" NOT NULL CHECK (status IN ('%', 'pt'))
+    reward_type VARCHAR(2) DEFAULT '%' NOT NULL CHECK (reward_type IN ('%', 'pt'))
 );
 
 CREATE TABLE goods (
@@ -23,7 +23,6 @@ CREATE TABLE orders (
 CREATE TABLE order_goods (
     order_id INT,
     good_id INT,
-    quantity INT NOT NULL,
     PRIMARY KEY (order_id, good_id),
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (good_id) REFERENCES goods(id)

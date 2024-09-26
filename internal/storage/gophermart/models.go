@@ -3,15 +3,12 @@ package storagemart
 import (
 	"time"
 
+	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Orders []Order
-
 type Order struct {
-	Number      string    `json:"number" example:"12345678903"`
-	Status      string    `json:"status"`
-	Accrual     float64   `json:"accrual,omitempty"`
+	storagedefault.Order
 	Sum         float64   `json:"sum,omitempty"`
 	UploadedAt  time.Time `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
 	ProcessedAt time.Time `json:"processed_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`

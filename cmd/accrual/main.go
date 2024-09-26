@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/mi4r/gophermart/docs/accrual"
 	"github.com/mi4r/gophermart/internal/config"
 	"github.com/mi4r/gophermart/internal/server"
 	serveraccrual "github.com/mi4r/gophermart/internal/server/accrual"
@@ -17,15 +18,15 @@ import (
 // @title Accrual System
 // @version 1.0
 // @description Swagger for Gopher Market API
-// @host localhost:8080
+// @host localhost:8081
 // @BasePath /
 func main() {
-	config := config.NewAccSysConfig()
+	config := config.NewAccrualConfig()
 	logger.InitLogger(config.LogLevel)
 	storage := storage.NewStorageAccrual(config.DriverType, config.StoragePath)
 	core := server.NewServer(
 		server.Config{
-			ServiceName: server.GophermartName,
+			ServiceName: server.AccrualName,
 			Listen:      config.ListenAddr,
 			MigrDirName: config.MigrDirName,
 		},

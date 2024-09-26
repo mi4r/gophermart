@@ -23,8 +23,12 @@ definitions:
       number:
         example: "12345678903"
         type: string
+      processed_at:
+        example: "2020-12-10T15:15:45+03:00"
+        format: date-time
+        type: string
       status:
-        $ref: '#/definitions/storage.OrderStatus'
+        $ref: '#/definitions/storagedefault.OrderStatus'
       sum:
         type: number
       uploaded_at:
@@ -32,7 +36,16 @@ definitions:
         format: date-time
         type: string
     type: object
-  storage.OrderStatus:
+  Reward:
+    properties:
+      match:
+        type: string
+      reward:
+        type: number
+      reward_type:
+        type: string
+    type: object
+  storagedefault.OrderStatus:
     enum:
     - NEW
     - PROCESSING
@@ -51,6 +64,42 @@ info:
   title: Gophermart
   version: "1.0"
 paths:
+  /api/goods:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Хендлер используется менеджерами для добавления механик вознаграждения за покупки
+        Полученные системой расчёта начислений составы чеков проверяются на совпадение с зарегистрированными в данном хендлере вознаграждениями
+      parameters:
+      - description: Механика вознаграждения
+        in: body
+        name: reward
+        required: true
+        schema:
+          $ref: '#/definitions/Reward'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Вознаграждение успешно зарегистрировано
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "409":
+          description: Ключ поиска уже зарегистрирован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация информации о вознаграждении за товар
+      tags:
+      - Админ
   /api/user/balance:
     get:
       description: |-

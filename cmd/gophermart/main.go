@@ -13,7 +13,7 @@ import (
 	"github.com/mi4r/gophermart/lib/logger"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	_ "github.com/mi4r/gophermart/docs"
+	_ "github.com/mi4r/gophermart/docs/gophermart"
 )
 
 // Documentation: https://github.com/swaggo/swag

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type AccSysConfig struct {
+type AccrualConfig struct {
 	ListenAddr  string
 	DriverType  string
 	LogLevel    string
@@ -13,22 +13,22 @@ type AccSysConfig struct {
 	MigrDirName string
 }
 
-func NewAccSysConfig() AccSysConfig {
+func NewAccrualConfig() AccrualConfig {
 	return loadAccSysConfigFromFlags()
 }
 
 // Первым делом парсим из окружения
-func loadAccSysConfigFromEnv() AccSysConfig {
-	var c AccSysConfig
+func loadAccrualConfigFromEnv() AccrualConfig {
+	var c AccrualConfig
 	c.ListenAddr = os.Getenv("RUN_ADDRESS")
 	c.StoragePath = os.Getenv("DATABASE_URI")
 	return c
 }
 
 // Затем парсим из флагов. Если есть из флага то заменяем
-func loadAccSysConfigFromFlags() AccSysConfig {
-	confFromEnv := loadAccSysConfigFromEnv()
-	var c AccSysConfig
+func loadAccSysConfigFromFlags() AccrualConfig {
+	confFromEnv := loadAccrualConfigFromEnv()
+	var c AccrualConfig
 	d := flag.String("d", "", "Path to store")
 	l := flag.String("l", "debug", "Logger Level")
 	a := flag.String("a", "", "Listen address with port")

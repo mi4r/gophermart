@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	github.com/fatih/color v1.17.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
+	github.com/golang/mock v1.6.0
 	github.com/jackc/pgx/v5 v5.7.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/ory/dockertest/v3 v3.11.0

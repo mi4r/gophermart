@@ -48,4 +48,5 @@ tasks:
       - go run cmd/gophermart/main.go
   swag:
     cmds:
-      - swag init -g ./cmd/gophermart/main.go
+      - swag init -g ./cmd/gophermart/main.go -o docs/gophermart
+      - swag init -g ./cmd/accrual/main.go -o docs/accrual 
