@@ -17,12 +17,13 @@ const (
 )
 
 type Order struct {
-	Number     string      `json:"number" example:"12345678903"`
-	Status     OrderStatus `json:"status"`
-	Accrual    float64     `json:"accrual,omitempty"`
-	Sum        float64     `json:"sum,omitempty"`
-	UploadedAt time.Time   `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
-	UserLogin  string      `json:"-"`
+	Number      string      `json:"number" example:"12345678903"`
+	Status      OrderStatus `json:"status"`
+	Accrual     float64     `json:"accrual,omitempty"`
+	Sum         float64     `json:"sum,omitempty"`
+	UploadedAt  time.Time   `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
+	UserLogin   string      `json:"-"`
+	IsWithdrawn bool        `json:"is_withdrawn"`
 } //@name Order
 
 type Creds struct {
@@ -55,10 +56,6 @@ func NewUserFromCreds(creds Creds) (User, error) {
 
 func (u *User) GetBalance() Balance {
 	return u.Balance
-}
-
-func (u *User) SetBalance(b Balance) {
-	u.Balance = b
 }
 
 func (c *Creds) IsEmpty() bool {

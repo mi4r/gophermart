@@ -1,6 +1,8 @@
 BEGIN;
+
 ALTER TABLE orders
 DROP COLUMN sum,
 DROP COLUMN is_withdrawn,
 ALTER COLUMN accrual TYPE BIGINT;
+
 COMMIT;

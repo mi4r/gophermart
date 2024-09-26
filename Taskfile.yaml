@@ -8,6 +8,9 @@ tasks:
   statictest:
     cmds:
       - go vet -vettool=./statictest ./...
+  statictest-win:
+    cmds:
+      - go vet -vettool=./statictest.exe ./...
   migration-up:
     cmds:
       - migrate -path internal/storage/migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
@@ -22,7 +25,8 @@ tasks:
       - migrate -path internal/storage/migrations -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
   build:
     cmds:
-      - ""
+      - "go build -o cmd/accrual/accrual cmd/accrual/main.go"
+      - "go build -o cmd/gophermart/gophermart cmd/gophermart/main.go"
   run:
     cmds:
       - go run cmd/gophermart/main.go

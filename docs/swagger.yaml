@@ -18,6 +18,8 @@ definitions:
     properties:
       accrual:
         type: number
+      is_withdrawn:
+        type: boolean
       number:
         example: "12345678903"
         type: string

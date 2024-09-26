@@ -305,6 +305,9 @@ const docTemplate = `{
                 "accrual": {
                     "type": "number"
                 },
+                "is_withdrawn": {
+                    "type": "boolean"
+                },
                 "number": {
                     "type": "string",
                     "example": "12345678903"
