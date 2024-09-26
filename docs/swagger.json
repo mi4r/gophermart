@@ -22,7 +22,7 @@
                     "200": {
                         "description": "Успешная обработка запроса",
                         "schema": {
-                            "$ref": "#/definitions/Wallet"
+                            "$ref": "#/definitions/Balance"
                         }
                     },
                     "401": {
@@ -271,6 +271,17 @@
         }
     },
     "definitions": {
+        "Balance": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "type": "number"
+                },
+                "withdrawn": {
+                    "type": "number"
+                }
+            }
+        },
         "Creds": {
             "type": "object",
             "properties": {
@@ -305,17 +316,6 @@
                     "type": "string",
                     "format": "date-time",
                     "example": "2020-12-10T15:15:45+03:00"
-                }
-            }
-        },
-        "Wallet": {
-            "type": "object",
-            "properties": {
-                "balance": {
-                    "type": "number"
-                },
-                "withdrawn": {
-                    "type": "number"
                 }
             }
         },

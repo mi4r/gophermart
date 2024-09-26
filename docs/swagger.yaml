@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  Balance:
+    properties:
+      current:
+        type: number
+      withdrawn:
+        type: number
+    type: object
   Creds:
     properties:
       login:
@@ -24,13 +31,6 @@ definitions:
         example: "2020-12-10T15:15:45+03:00"
         format: date-time
         type: string
-    type: object
-  Wallet:
-    properties:
-      balance:
-        type: number
-      withdrawn:
-        type: number
     type: object
   storage.OrderStatus:
     enum:
@@ -63,7 +63,7 @@ paths:
         "200":
           description: Успешная обработка запроса
           schema:
-            $ref: '#/definitions/Wallet'
+            $ref: '#/definitions/Balance'
         "401":
           description: Пользователь не авторизован
           schema:

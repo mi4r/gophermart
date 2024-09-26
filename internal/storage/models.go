@@ -31,14 +31,14 @@ type Creds struct {
 	Password string `json:"password"`
 } // @name Creds
 
-type Wallet struct {
-	Balance   float64 `json:"balance"`
+type Balance struct {
+	Current   float64 `json:"current"`
 	Withdrawn float64 `json:"withdrawn"`
-} //@name Wallet
+} //@name Balance
 
 type User struct {
 	Creds
-	Wallet
+	Balance
 } //@name User
 
 func NewUserFromCreds(creds Creds) (User, error) {
@@ -54,8 +54,8 @@ func NewUserFromCreds(creds Creds) (User, error) {
 	}, nil
 }
 
-func (u *User) GetBalance() Wallet {
-	return u.Wallet
+func (u *User) GetBalance() Balance {
+	return u.Balance
 }
 
 func (c *Creds) IsEmpty() bool {

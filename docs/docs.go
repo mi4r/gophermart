@@ -28,7 +28,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Успешная обработка запроса",
                         "schema": {
-                            "$ref": "#/definitions/Wallet"
+                            "$ref": "#/definitions/Balance"
                         }
                     },
                     "401": {
@@ -277,6 +277,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "Balance": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "type": "number"
+                },
+                "withdrawn": {
+                    "type": "number"
+                }
+            }
+        },
         "Creds": {
             "type": "object",
             "properties": {
@@ -311,17 +322,6 @@ const docTemplate = `{
                     "type": "string",
                     "format": "date-time",
                     "example": "2020-12-10T15:15:45+03:00"
-                }
-            }
-        },
-        "Wallet": {
-            "type": "object",
-            "properties": {
-                "balance": {
-                    "type": "number"
-                },
-                "withdrawn": {
-                    "type": "number"
                 }
             }
         },

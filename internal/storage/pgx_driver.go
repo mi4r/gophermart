@@ -18,7 +18,6 @@ import (
 
 const (
 	MigrDirNameTest string = "migrations"
-	MigrDirNameProd string = "internal/storage/migrations"
 )
 
 type pgxDriver struct {
@@ -77,7 +76,8 @@ func (d *pgxDriver) autoMigrate(isTest bool) error {
 	if err != nil {
 		return err
 	}
-	MigrDirName := MigrDirNameProd
+	// Хз на винде не хочет работать
+	MigrDirName := path.Join("internal", "storage", MigrDirNameTest)
 	if isTest {
 		MigrDirName = MigrDirNameTest
 	}
@@ -114,8 +114,8 @@ func (d *pgxDriver) UserReadOne(login string) (User, error) {
 	ctx := context.Background()
 	var user User
 	if err := d.queryRow(ctx, `
-		SELECT login, password, balance, withdrawn FROM users WHERE login=$1
-	`, login).Scan(&user.Login, &user.Password, &user.Balance, &user.Withdrawn); err != nil {
+		SELECT login, password, current, withdrawn FROM users WHERE login=$1
+	`, login).Scan(&user.Login, &user.Password, &user.Current, &user.Withdrawn); err != nil {
 		return user, err
 	}
 	return user, nil
@@ -125,7 +125,7 @@ func (d *pgxDriver) UserReadAll() ([]User, error) {
 	var users []User
 	ctx := context.Background()
 	rows, err := d.queryRows(ctx, `
-	SELECT login, password, balance, withdrawn FROM users
+	SELECT login, password, current, withdrawn FROM users
 	`)
 	if err != nil {
 		return users, err
@@ -134,7 +134,7 @@ func (d *pgxDriver) UserReadAll() ([]User, error) {
 	var errs []error
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.Login, &user.Password, &user.Balance, &user.Withdrawn); err != nil {
+		if err := rows.Scan(&user.Login, &user.Password, &user.Current, &user.Withdrawn); err != nil {
 			slog.Error("scan error", slog.String("err", err.Error()))
 			errs = append(errs, err)
 		}
