@@ -21,10 +21,10 @@ func NewAccrualSystem(server *server.Server) *AccrualSystem {
 func (s *AccrualSystem) SetRoutes() {
 	s.Router.GET("/ping", s.pingHandler)
 	// TODO
-	gApi := s.Router.Group("/api")
+	gAPI := s.Router.Group("/api")
 	// gApi.GET("/orders/:number", s.ordersGetHandler)
 	// gApi.POST("/orders", s.ordersPostHandler)
-	gApi.POST("/goods", s.rewardPostHandler)
+	gAPI.POST("/goods", s.rewardPostHandler)
 }
 
 func (s *AccrualSystem) SetStorage(storage storage.StorageAccrualSystem) {
