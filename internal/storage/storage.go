@@ -1,6 +1,7 @@
 package storage
 
 import (
+	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
 	"github.com/mi4r/gophermart/internal/storage/drivers"
 	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 )
@@ -32,7 +33,8 @@ func NewStorageGophermart(driverType string, path string) StorageGophermart {
 
 type StorageAccrualSystem interface {
 	Storage
-	// OrderProcessing(number string) error
+	RewardCreate(reward storageaccrual.Reward) error
+	OrderRegCreate(order storageaccrual.Order) error
 }
 
 func NewStorageAccrual(driverType string, path string) StorageAccrualSystem {

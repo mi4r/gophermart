@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -14,7 +13,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
 	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
+)
+
+const (
+	migrDefaultPath = "migrations"
 )
 
 type pgxDriver struct {
@@ -71,20 +75,20 @@ func (d *pgxDriver) Ping() error {
 }
 
 // Автоматическая миграция базы. Думаю прикрутить ключ при запуске
-func (d *pgxDriver) autoMigrate(migrDirName string, isTest bool) error {
-	curDirAbs, err := os.Getwd()
-	if err != nil {
-		return err
+func (d *pgxDriver) autoMigrate(migrDirName string, isTest bool) (err error) {
+
+	mpath := migrDefaultPath
+	if !isTest {
+		mpath, err = filepath.Abs(
+			filepath.Join("internal", "storage", migrDirName, "migrations"))
+		if err != nil {
+			return err
+		}
 	}
-	// Хз на винде не хочет работать
-	MigrDirName := path.Join("internal", "storage", migrDirName, "migrations")
-	if isTest {
-		MigrDirName = migrDirName
-	}
-	migrDirAbsPath := path.Join(curDirAbs, MigrDirName)
-	slog.Debug("migration init", slog.String("path", migrDirAbsPath))
+
+	slog.Debug("migration init", slog.String("path", mpath))
 	migr, err := migrate.New(
-		fmt.Sprintf("file://%s", migrDirAbsPath),
+		fmt.Sprintf("file://%s", mpath),
 		d.dbURL,
 	)
 	if err != nil {
@@ -200,4 +204,55 @@ func (d *pgxDriver) OrdersReadByLogin(login string) ([]storagemart.Order, error)
 	}
 
 	return orders, errors.Join(errs...)
+}
+
+func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
+	_, err := d.exec(context.Background(), `
+	INSERT INTO rewards (match, reward, reward_type)
+	VALUES ($1, $2, $3)
+	`, r.Match, r.Reward, r.RewardType,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
+	ctx := context.Background()
+	tx, err := d.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	var orderID int64
+	defer tx.Rollback(ctx)
+	if err := tx.QueryRow(ctx, `
+	INSERT INTO orders (number) 
+	VALUES ($1)
+	RETURNING id`, o.Order).Scan(&orderID); err != nil {
+		return err
+	}
+	slog.Debug("order id is fetch", slog.Int64("id", orderID))
+
+	sqlScriptCreateGoods := `INSERT INTO goods (description, price) VALUES ($1, $2) RETURNING id`
+	sqlScriptGoodInOrder := `INSERT INTO order_goods (order_id, good_id) VALUES ($1, $2)`
+	var errs []error
+	for _, good := range o.Goods {
+		slog.Debug("add good of order",
+			slog.String("description", good.Description),
+			slog.Float64("price", good.Price),
+		)
+		var goodID int64
+		if err := tx.QueryRow(
+			ctx, sqlScriptCreateGoods, good.Description, good.Price).
+			Scan(&goodID); err != nil {
+			errs = append(errs, err)
+		}
+		if _, err := tx.Exec(
+			ctx, sqlScriptGoodInOrder, orderID, goodID); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	errs = append(errs, tx.Commit(ctx))
+	return errors.Join(errs...)
 }

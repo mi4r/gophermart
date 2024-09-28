@@ -168,6 +168,7 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 			return c.String(http.StatusConflict, errOrderUploadByAnother.Error())
 			// Проверка на то что заказ уже не был создан этим же пользователем
 		} else if storedOrder.UserLogin == login {
+			// Тут ответ 200 по ТЗ
 			return c.String(http.StatusOK, orderAlreadyUpload)
 		}
 	}
@@ -176,7 +177,8 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.String(http.StatusCreated, orderAccepted)
+	// Тут ответ 202 по ТЗ
+	return c.String(http.StatusAccepted, orderAccepted)
 }
 
 // Orders get

@@ -3,8 +3,8 @@ package config
 import "strings"
 
 const (
-	migrDirNameGophermart string = "migrations-gophermart"
-	migrDirNameAccrual    string = "migrations-accrual"
+	migrDirNameGophermart string = "gophermart"
+	migrDirNameAccrual    string = "accrual"
 )
 
 const (

@@ -23,7 +23,7 @@ func (s *AccrualSystem) SetRoutes() {
 	// TODO
 	gAPI := s.Router.Group("/api")
 	// gApi.GET("/orders/:number", s.ordersGetHandler)
-	// gApi.POST("/orders", s.ordersPostHandler)
+	gAPI.POST("/orders", s.ordersPostHandler)
 	gAPI.POST("/goods", s.rewardPostHandler)
 }
 
