@@ -1,29 +1,19 @@
-package storage
+package storagemart
 
 import (
 	"time"
 
+	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type OrderStatus string
-type Orders []Order
-
-const (
-	StatusNew        OrderStatus = "NEW"
-	StatusProcessing OrderStatus = "PROCESSING"
-	StatusInvalid    OrderStatus = "INVALID"
-	StatusProcessed  OrderStatus = "PROCESSED"
-)
-
 type Order struct {
-	Number      string      `json:"number" example:"12345678903"`
-	Status      OrderStatus `json:"status"`
-	Accrual     float64     `json:"accrual,omitempty"`
-	Sum         float64     `json:"sum,omitempty"`
-	UploadedAt  time.Time   `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
-	UserLogin   string      `json:"-"`
-	IsWithdrawn bool        `json:"is_withdrawn"`
+	storagedefault.Order
+	Sum         float64   `json:"sum,omitempty"`
+	UploadedAt  time.Time `json:"uploaded_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
+	ProcessedAt time.Time `json:"processed_at" format:"date-time" example:"2020-12-10T15:15:45+03:00"`
+	UserLogin   string    `json:"-"`
+	IsWithdrawn bool      `json:"is_withdrawn"`
 } //@name Order
 
 type Creds struct {

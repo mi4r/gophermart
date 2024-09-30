@@ -6,13 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/mi4r/gophermart/docs/gophermart"
 	"github.com/mi4r/gophermart/internal/config"
 	"github.com/mi4r/gophermart/internal/server"
+	servermart "github.com/mi4r/gophermart/internal/server/gophermart"
 	"github.com/mi4r/gophermart/internal/storage"
 	"github.com/mi4r/gophermart/lib/logger"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
-	_ "github.com/mi4r/gophermart/docs"
 )
 
 // Documentation: https://github.com/swaggo/swag
@@ -24,16 +23,19 @@ import (
 func main() {
 	config := config.NewGophermartConfig()
 	logger.InitLogger(config.LogLevel)
-	storage := storage.NewStorage(config.DriverType, config.StoragePath)
+	storage := storage.NewStorageGophermart(config.DriverType, config.StoragePath)
 	core := server.NewServer(
 		server.Config{
 			ServiceName: server.GophermartName,
 			Listen:      config.ListenAddr,
 			SecretKey:   config.SecretKey,
-		}, storage,
+			MigrDirName: config.MigrDirName,
+		},
 	)
-	service := server.NewGophermart(core)
+	service := servermart.NewGophermart(core)
+	// Configure
 	service.SetRoutes()
+	service.SetStorage(storage)
 	go service.Server.Start()
 
 	// Канал для сигнала завершения

@@ -6,24 +6,36 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/mi4r/gophermart/docs/accrual"
 	"github.com/mi4r/gophermart/internal/config"
 	"github.com/mi4r/gophermart/internal/server"
+	serveraccrual "github.com/mi4r/gophermart/internal/server/accrual"
 	"github.com/mi4r/gophermart/internal/storage"
 	"github.com/mi4r/gophermart/lib/logger"
 )
 
+// Documentation: https://github.com/swaggo/swag
+// @title Accrual System
+// @version 1.0
+// @description Swagger for Gopher Market API
+// @host localhost:8081
+// @BasePath /
 func main() {
-	config := config.NewAccSysConfig()
+	config := config.NewAccrualConfig()
 	logger.InitLogger(config.LogLevel)
-	storage := storage.NewStorage(config.DriverType, config.StoragePath)
+	storage := storage.NewStorageAccrual(config.DriverType, config.StoragePath)
 	core := server.NewServer(
 		server.Config{
-			ServiceName: server.GophermartName,
+			ServiceName: server.AccrualName,
 			Listen:      config.ListenAddr,
-		}, storage,
+			MigrDirName: config.MigrDirName,
+		},
 	)
-	service := server.NewAccrualSystem(core)
+	service := serveraccrual.NewAccrualSystem(core)
+
+	// Configure
 	service.SetRoutes()
+	service.SetStorage(storage)
 	go service.Server.Start()
 
 	// Канал для сигнала завершения

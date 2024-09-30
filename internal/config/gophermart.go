@@ -3,28 +3,7 @@ package config
 import (
 	"flag"
 	"os"
-	"strings"
 )
-
-const (
-	DriverPostgres = "postgres"
-)
-
-// file://pathToStorage -> file
-func parseDriverType(path string) string {
-	if path == "" {
-		return ""
-	}
-	return strings.Split(path, ":")[0]
-}
-
-func ifEmpty(fromFlag, fromEnv string) string {
-	// Если пусто во флаге, то вернем из окружения
-	if fromFlag == "" {
-		return fromEnv
-	}
-	return fromFlag
-}
 
 type GophermartConfig struct {
 	ListenAddr           string
@@ -33,6 +12,7 @@ type GophermartConfig struct {
 	StoragePath          string
 	AccrualSystemAddress string
 	SecretKey            string
+	MigrDirName          string
 }
 
 func NewGophermartConfig() GophermartConfig {
@@ -66,6 +46,8 @@ func loadGophermartFromFlags() GophermartConfig {
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
 	c.SecretKey = *k
+
+	c.MigrDirName = migrDirNameGophermart
 
 	return c
 }

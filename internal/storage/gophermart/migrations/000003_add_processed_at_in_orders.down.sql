@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE orders
+DROP COLUMN processed_at TIMESTAMP;
+
+COMMIT;

@@ -27,3 +27,4 @@ vendor/
 statictest
 .env
 gophermarttest
+*.log

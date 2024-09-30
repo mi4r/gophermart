@@ -1,4 +1,4 @@
-package storage
+package drivers
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 	"github.com/mi4r/gophermart/lib/logger"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -94,13 +95,13 @@ func TestDatabaseConnection(t *testing.T) {
 func TestUsersCreate(t *testing.T) {
 	tests := []struct {
 		name    string
-		user    User
+		user    storagemart.User
 		wantErr bool
 	}{
 		{
 			name: "create_Admin",
-			user: User{
-				Creds: Creds{
+			user: storagemart.User{
+				Creds: storagemart.Creds{
 					Login:    "admin",
 					Password: "admin",
 				},
@@ -109,8 +110,8 @@ func TestUsersCreate(t *testing.T) {
 		},
 		{
 			name: "create_User1",
-			user: User{
-				Creds: Creds{
+			user: storagemart.User{
+				Creds: storagemart.Creds{
 					Login:    "user1",
 					Password: "user1",
 				},
@@ -119,8 +120,8 @@ func TestUsersCreate(t *testing.T) {
 		},
 		{
 			name: "create_User2",
-			user: User{
-				Creds: Creds{
+			user: storagemart.User{
+				Creds: storagemart.Creds{
 					Login:    "user2",
 					Password: "user2",
 				},
@@ -129,8 +130,8 @@ func TestUsersCreate(t *testing.T) {
 		},
 		{
 			name: "create_OneMoreUser1",
-			user: User{
-				Creds: Creds{
+			user: storagemart.User{
+				Creds: storagemart.Creds{
 					Login:    "user1",
 					Password: "user1",
 				},
@@ -246,7 +247,7 @@ func TestOrdersCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := storage.OrderCreate(tt.login, tt.number); err != nil {
+			if err := storage.UserOrderCreate(tt.login, tt.number); err != nil {
 				if tt.wantErr {
 					t.Skipf("want err. number %s already exists. err: %s", tt.number, err.Error())
 				} else {
@@ -275,7 +276,7 @@ func TestOrderReadOne(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			user, err := storage.OrderReadOne(tt.number)
+			user, err := storage.UserOrderReadOne(tt.number)
 			if err != nil {
 				t.Error(err)
 			}
@@ -307,12 +308,12 @@ func TestOrderReadAllByUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			orders, err := storage.OrdersReadByLogin(tt.userLogin)
+			orders, err := storage.UserOrdersReadByLogin(tt.userLogin)
 			if err != nil {
 				t.Error(err)
 			}
 			if len(orders) == 0 {
-				t.Errorf("Orders not found. User login: %s", tt.userLogin)
+				t.Errorf("Orders not found. storagemart.User login: %s", tt.userLogin)
 			}
 			t.Logf("Order user %s %+v", tt.userLogin, orders)
 		})
