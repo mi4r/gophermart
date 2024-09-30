@@ -67,6 +67,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/orders": {
+            "post": {
+                "description": "Для начисления баллов состав заказа должен быть проверен на совпадения с зарегистрированными записями вознаграждений за товары\nНачисляется сумма совпадений\nПринятый заказ не обязан браться в обработку непосредственно в момент получения запроса",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Админ"
+                ],
+                "summary": "Регистрация нового совершённого заказа",
+                "parameters": [
+                    {
+                        "description": "Регистрация нового совершённого заказа",
+                        "name": "reward",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Order"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Заказ успешно принят в обработку",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Заказ уже принят в обработку",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/user/balance": {
             "get": {
                 "description": "Хендлер доступен только авторизованному пользователю.\nВ ответе должны содержаться данные о текущей сумме баллов лояльности,\nа также сумме использованных за весь период регистрации баллов.",
@@ -392,9 +444,20 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "reward_type": {
-                    "type": "string"
+                    "$ref": "#/definitions/storageaccrual.RewardType"
                 }
             }
+        },
+        "storageaccrual.RewardType": {
+            "type": "string",
+            "enum": [
+                "pt",
+                "%"
+            ],
+            "x-enum-varnames": [
+                "RewardTypePt",
+                "RewardTypePercent"
+            ]
         },
         "storagedefault.OrderStatus": {
             "type": "string",

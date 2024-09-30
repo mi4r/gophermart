@@ -67,6 +67,8 @@ func (d *pgxDriver) Migrate(migrDirName string) {
 	// Try auto-migration
 	if err := d.autoMigrate(migrDirName, d.isTest); err != nil {
 		slog.Warn("migration error", slog.String("err", err.Error()))
+	} else {
+		slog.Debug("migration OK")
 	}
 }
 
@@ -227,12 +229,10 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 	var orderID int64
 	defer tx.Rollback(ctx)
 	if err := tx.QueryRow(ctx, `
-	INSERT INTO orders (number) 
-	VALUES ($1)
-	RETURNING id`, o.Order).Scan(&orderID); err != nil {
+	INSERT INTO orders (order_number) VALUES ($1) RETURNING id`, o.Order).Scan(&orderID); err != nil {
 		return err
 	}
-	slog.Debug("order id is fetch", slog.Int64("id", orderID))
+	slog.Debug("order id is fetch", slog.Int64("id", orderID), slog.String("order", o.Order))
 
 	sqlScriptCreateGoods := `INSERT INTO goods (description, price) VALUES ($1, $2) RETURNING id`
 	sqlScriptGoodInOrder := `INSERT INTO order_goods (order_id, good_id) VALUES ($1, $2)`

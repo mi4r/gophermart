@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
 )
 
 // MockStorageAccrualSystem is a mock of StorageAccrualSystem interface.
@@ -71,6 +72,35 @@ func (mr *MockStorageAccrualSystemMockRecorder) Open() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Open", reflect.TypeOf((*MockStorageAccrualSystem)(nil).Open))
 }
 
+// OrderRegCreate mocks base method.
+func (m *MockStorageAccrualSystem) OrderRegCreate(arg0 storageaccrual.Order) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderRegCreate", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OrderRegCreate indicates an expected call of OrderRegCreate.
+func (mr *MockStorageAccrualSystemMockRecorder) OrderRegCreate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderRegCreate", reflect.TypeOf((*MockStorageAccrualSystem)(nil).OrderRegCreate), arg0)
+}
+
+// OrderRegIsExists mocks base method.
+func (m *MockStorageAccrualSystem) OrderRegIsExists(arg0 storageaccrual.Order) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderRegIsExists", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrderRegIsExists indicates an expected call of OrderRegIsExists.
+func (mr *MockStorageAccrualSystemMockRecorder) OrderRegIsExists(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderRegIsExists", reflect.TypeOf((*MockStorageAccrualSystem)(nil).OrderRegIsExists), arg0)
+}
+
 // Ping mocks base method.
 func (m *MockStorageAccrualSystem) Ping() error {
 	m.ctrl.T.Helper()
@@ -83,4 +113,18 @@ func (m *MockStorageAccrualSystem) Ping() error {
 func (mr *MockStorageAccrualSystemMockRecorder) Ping() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockStorageAccrualSystem)(nil).Ping))
+}
+
+// RewardCreate mocks base method.
+func (m *MockStorageAccrualSystem) RewardCreate(arg0 storageaccrual.Reward) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RewardCreate", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RewardCreate indicates an expected call of RewardCreate.
+func (mr *MockStorageAccrualSystemMockRecorder) RewardCreate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RewardCreate", reflect.TypeOf((*MockStorageAccrualSystem)(nil).RewardCreate), arg0)
 }

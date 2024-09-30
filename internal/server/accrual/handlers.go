@@ -2,6 +2,7 @@ package serveraccrual
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,6 +19,8 @@ const (
 var (
 	errMatchKeyAlreadyExists     = errors.New("match key already exists")
 	errInvalidReward             = errors.New("invalid reward format")
+	errRewardIsNegative          = errors.New("reward value must not be a negative")
+	errRewardIsInvalidType       = errors.New("reward type must be '%' or 'pt'")
 	errInvalidRewardMatchIsEmpty = errors.New("match key must not be empty")
 	errInvalidOrder              = errors.New("invalid order format")
 	errInvalidOrderID            = errors.New("invalid order number format")
@@ -58,6 +61,15 @@ func (s *AccrualSystem) rewardPostHandler(c echo.Context) error {
 	if reward.IsEmptyMatch() {
 		return c.JSON(http.StatusBadRequest, errInvalidRewardMatchIsEmpty.Error())
 	}
+
+	if reward.IsNegative() {
+		return c.JSON(http.StatusBadRequest, errRewardIsNegative.Error())
+	}
+
+	if !reward.IsValidType() {
+		return c.JSON(http.StatusBadRequest, errRewardIsInvalidType.Error())
+	}
+
 	if err := s.storage.RewardCreate(reward); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -76,7 +88,7 @@ func (s *AccrualSystem) rewardPostHandler(c echo.Context) error {
 // @Tags Админ
 // @Accept  application/json
 // @Produce text/plain
-// @Param reward body storageaccrual.Order true "Регистрация нового совершённого заказа"
+// @Param reward body Order true "Регистрация нового совершённого заказа"
 // @Success 202 {string} string "Заказ успешно принят в обработку"
 // @Failure 400 {string} string "Неверный формат запроса"
 // @Failure 409 {string} string "Заказ уже принят в обработку"
@@ -96,8 +108,10 @@ func (s *AccrualSystem) ordersPostHandler(c echo.Context) error {
 	if err := s.storage.OrderRegCreate(order); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			slog.Debug("internal error. 23505", slog.String("msg", err.Error()))
 			return c.String(http.StatusConflict, errOrderAlreadyExists.Error())
 		}
+		slog.Debug("internal error. unknown", slog.String("msg", err.Error()))
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 

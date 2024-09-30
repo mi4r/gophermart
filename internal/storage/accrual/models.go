@@ -1,8 +1,8 @@
 package storageaccrual
 
 const (
-	RewardTypePt      string = "pt"
-	RewardTypePercent string = "%"
+	RewardTypePt      RewardType = "pt"
+	RewardTypePercent RewardType = "%"
 )
 
 type RewardType string
@@ -23,6 +23,15 @@ type Reward struct {
 	RewardType RewardType `json:"reward_type"`
 } // @name Reward
 
-func (r Reward) IsEmptyMatch() bool {
+func (r *Reward) IsEmptyMatch() bool {
 	return r.Match == ""
+}
+
+func (r *Reward) IsNegative() bool {
+	return r.Reward < 0
+}
+
+func (r *Reward) IsValidType() bool {
+	return r.RewardType == RewardTypePercent ||
+		r.RewardType == RewardTypePt
 }

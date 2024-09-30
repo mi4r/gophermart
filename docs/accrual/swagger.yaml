@@ -14,26 +14,20 @@ definitions:
       password:
         type: string
     type: object
+  Good:
+    properties:
+      description:
+        type: string
+      price:
+        type: number
+    type: object
   Order:
     properties:
-      accrual:
-        type: number
-      is_withdrawn:
-        type: boolean
-      number:
-        example: "12345678903"
-        type: string
-      processed_at:
-        example: "2020-12-10T15:15:45+03:00"
-        format: date-time
-        type: string
-      status:
-        $ref: '#/definitions/storagedefault.OrderStatus'
-      sum:
-        type: number
-      uploaded_at:
-        example: "2020-12-10T15:15:45+03:00"
-        format: date-time
+      goods:
+        items:
+          $ref: '#/definitions/Good'
+        type: array
+      order:
         type: string
     type: object
   Reward:
@@ -43,20 +37,16 @@ definitions:
       reward:
         type: number
       reward_type:
-        type: string
+        $ref: '#/definitions/storageaccrual.RewardType'
     type: object
-  storagedefault.OrderStatus:
+  storageaccrual.RewardType:
     enum:
-    - NEW
-    - PROCESSING
-    - INVALID
-    - PROCESSED
+    - pt
+    - '%'
     type: string
     x-enum-varnames:
-    - StatusNew
-    - StatusProcessing
-    - StatusInvalid
-    - StatusProcessed
+    - RewardTypePt
+    - RewardTypePercent
 host: localhost:8081
 info:
   contact: {}
@@ -98,6 +88,43 @@ paths:
           schema:
             type: string
       summary: Регистрация информации о вознаграждении за товар
+      tags:
+      - Админ
+  /api/orders:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Для начисления баллов состав заказа должен быть проверен на совпадения с зарегистрированными записями вознаграждений за товары
+        Начисляется сумма совпадений
+        Принятый заказ не обязан браться в обработку непосредственно в момент получения запроса
+      parameters:
+      - description: Регистрация нового совершённого заказа
+        in: body
+        name: reward
+        required: true
+        schema:
+          $ref: '#/definitions/Order'
+      produces:
+      - text/plain
+      responses:
+        "202":
+          description: Заказ успешно принят в обработку
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "409":
+          description: Заказ уже принят в обработку
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация нового совершённого заказа
       tags:
       - Админ
   /api/user/balance:

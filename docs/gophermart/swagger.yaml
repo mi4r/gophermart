@@ -43,8 +43,16 @@ definitions:
       reward:
         type: number
       reward_type:
-        type: string
+        $ref: '#/definitions/storageaccrual.RewardType'
     type: object
+  storageaccrual.RewardType:
+    enum:
+    - pt
+    - '%'
+    type: string
+    x-enum-varnames:
+    - RewardTypePt
+    - RewardTypePercent
   storagedefault.OrderStatus:
     enum:
     - NEW
@@ -98,6 +106,43 @@ paths:
           schema:
             type: string
       summary: Регистрация информации о вознаграждении за товар
+      tags:
+      - Админ
+  /api/orders:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Для начисления баллов состав заказа должен быть проверен на совпадения с зарегистрированными записями вознаграждений за товары
+        Начисляется сумма совпадений
+        Принятый заказ не обязан браться в обработку непосредственно в момент получения запроса
+      parameters:
+      - description: Регистрация нового совершённого заказа
+        in: body
+        name: reward
+        required: true
+        schema:
+          $ref: '#/definitions/Order'
+      produces:
+      - text/plain
+      responses:
+        "202":
+          description: Заказ успешно принят в обработку
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "409":
+          description: Заказ уже принят в обработку
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация нового совершённого заказа
       tags:
       - Админ
   /api/user/balance:
