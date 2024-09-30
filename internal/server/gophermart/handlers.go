@@ -3,6 +3,7 @@ package servermart
 import (
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -66,6 +67,7 @@ func (s *Gophermart) userRegisterHandler(c echo.Context) error {
 
 	user, err := storagemart.NewUserFromCreds(creds)
 	if err != nil {
+		slog.Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
@@ -75,6 +77,7 @@ func (s *Gophermart) userRegisterHandler(c echo.Context) error {
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return c.String(http.StatusConflict, errLoginIsExists.Error())
 		}
+		slog.Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 

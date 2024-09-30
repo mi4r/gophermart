@@ -104,8 +104,7 @@ func (d *pgxDriver) Close() {
 }
 
 func (d *pgxDriver) UserCreate(user storagemart.User) error {
-	_, err := d.exec(context.Background(),
-		`
+	_, err := d.exec(context.Background(), `
 	INSERT INTO users (login, password)
 	VALUES ($1, $2)
 	`, user.Login, user.Password,
