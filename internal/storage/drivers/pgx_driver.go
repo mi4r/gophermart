@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	migrDefaultPath = "migrations"
+	migrDefaultPath = "default"
 )
 
 type pgxDriver struct {
@@ -65,7 +65,7 @@ func (d *pgxDriver) Open() error {
 
 func (d *pgxDriver) Migrate(migrDirName string) {
 	// Try auto-migration
-	if err := d.autoMigrate(migrDirName, d.isTest); err != nil {
+	if err := d.autoDefaultMigrate(); err != nil {
 		slog.Warn("migration error", slog.String("err", err.Error()))
 	} else {
 		slog.Debug("migration OK")
@@ -86,6 +86,24 @@ func (d *pgxDriver) autoMigrate(migrDirName string, isTest bool) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	slog.Debug("migration init", slog.String("path", mpath))
+	migr, err := migrate.New(
+		fmt.Sprintf("file://%s", mpath),
+		d.dbURL,
+	)
+	if err != nil {
+		return err
+	}
+	return migr.Up()
+}
+
+func (d *pgxDriver) autoDefaultMigrate() error {
+	mpath, err := filepath.Abs(
+		filepath.Join("internal", "storage", migrDefaultPath, "migrations"))
+	if err != nil {
+		return err
 	}
 
 	slog.Debug("migration init", slog.String("path", mpath))
@@ -149,9 +167,9 @@ func (d *pgxDriver) UserReadAll() ([]storagemart.User, error) {
 	return users, errors.Join(errs...)
 }
 
-func (d *pgxDriver) OrderCreate(login, number string) error {
+func (d *pgxDriver) UserOrderCreate(login, number string) error {
 	_, err := d.exec(context.Background(), `
-	INSERT INTO orders (number, user_login)
+	INSERT INTO user_orders (number, user_login)
 	VALUES ($1, $2)
 	`, number, login,
 	)
@@ -161,12 +179,12 @@ func (d *pgxDriver) OrderCreate(login, number string) error {
 	return nil
 }
 
-func (d *pgxDriver) OrderReadOne(number string) (storagemart.Order, error) {
+func (d *pgxDriver) UserOrderReadOne(number string) (storagemart.Order, error) {
 	ctx := context.Background()
 	var o storagemart.Order
 	if err := d.queryRow(ctx, `
 	SELECT number, status, accrual, uploaded_at, user_login
-	FROM orders
+	FROM user_orders
 		WHERE number = $1
 		LIMIT 1
 	`, number).Scan(
@@ -178,12 +196,12 @@ func (d *pgxDriver) OrderReadOne(number string) (storagemart.Order, error) {
 	return o, nil
 }
 
-func (d *pgxDriver) OrdersReadByLogin(login string) ([]storagemart.Order, error) {
+func (d *pgxDriver) UserOrdersReadByLogin(login string) ([]storagemart.Order, error) {
 	var orders []storagemart.Order
 	ctx := context.Background()
 	rows, err := d.queryRows(ctx, `
 	SELECT number, status, accrual, uploaded_at, user_login
-	FROM orders
+	FROM user_orders
 		WHERE user_login = $1
 		ORDER BY uploaded_at ASC
 	`, login)

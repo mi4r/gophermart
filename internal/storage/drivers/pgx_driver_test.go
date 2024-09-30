@@ -247,7 +247,7 @@ func TestOrdersCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := storage.OrderCreate(tt.login, tt.number); err != nil {
+			if err := storage.UserOrderCreate(tt.login, tt.number); err != nil {
 				if tt.wantErr {
 					t.Skipf("want err. number %s already exists. err: %s", tt.number, err.Error())
 				} else {
@@ -276,7 +276,7 @@ func TestOrderReadOne(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			user, err := storage.OrderReadOne(tt.number)
+			user, err := storage.UserOrderReadOne(tt.number)
 			if err != nil {
 				t.Error(err)
 			}
@@ -308,7 +308,7 @@ func TestOrderReadAllByUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			orders, err := storage.OrdersReadByLogin(tt.userLogin)
+			orders, err := storage.UserOrdersReadByLogin(tt.userLogin)
 			if err != nil {
 				t.Error(err)
 			}

@@ -6,14 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/mi4r/gophermart/docs/gophermart"
 	"github.com/mi4r/gophermart/internal/config"
 	"github.com/mi4r/gophermart/internal/server"
 	servermart "github.com/mi4r/gophermart/internal/server/gophermart"
 	"github.com/mi4r/gophermart/internal/storage"
 	"github.com/mi4r/gophermart/lib/logger"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
-	_ "github.com/mi4r/gophermart/docs/gophermart"
 )
 
 // Documentation: https://github.com/swaggo/swag

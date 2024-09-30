@@ -19,9 +19,9 @@ type StorageGophermart interface {
 	UserReadOne(login string) (storagemart.User, error)
 	UserReadAll() ([]storagemart.User, error)
 
-	OrderCreate(login, number string) error
-	OrderReadOne(number string) (storagemart.Order, error)
-	OrdersReadByLogin(login string) ([]storagemart.Order, error)
+	UserOrderCreate(login, number string) error
+	UserOrderReadOne(number string) (storagemart.Order, error)
+	UserOrdersReadByLogin(login string) ([]storagemart.Order, error)
 }
 
 func NewStorageGophermart(driverType string, path string) StorageGophermart {

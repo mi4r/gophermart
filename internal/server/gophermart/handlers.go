@@ -159,7 +159,7 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 	}
 
 	var emptyOrder storagemart.Order
-	storedOrder, err := s.storage.OrderReadOne(orderNumber)
+	storedOrder, err := s.storage.UserOrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -176,7 +176,7 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 		}
 	}
 
-	err = s.storage.OrderCreate(login, orderNumber)
+	err = s.storage.UserOrderCreate(login, orderNumber)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -203,7 +203,7 @@ func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	orders, err := s.storage.OrdersReadByLogin(login)
+	orders, err := s.storage.UserOrdersReadByLogin(login)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
