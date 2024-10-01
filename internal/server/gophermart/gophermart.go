@@ -38,4 +38,5 @@ func (s *Gophermart) SetRoutes() {
 	gUsers.POST("/orders", s.userPostOrdersHandler)
 	gUsers.GET("/orders", s.userGetOrdersHandler)
 	gUsers.GET("/balance", s.userGetBalance)
+	gUsers.POST("/balance/withdraw", s.userBalanceWithdraw)
 }

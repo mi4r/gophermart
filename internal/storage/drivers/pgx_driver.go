@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -272,4 +273,27 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 	}
 	errs = append(errs, tx.Commit(ctx))
 	return errors.Join(errs...)
+}
+
+func (d *pgxDriver) WithdrawBalance(login, order string, sum, curBalance float64) error {
+	ctx := context.Background()
+	tx, err := d.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	queryUpdate := `UPDATE users SET current = current - $1, withdrawn = withdrawn + $1 WHERE login = $2;`
+	_, err = tx.Exec(ctx, queryUpdate, sum, login)
+	if err != nil {
+		return err
+	}
+
+	queryInsertOrder := `INSERT INTO orders (number, user_login, sum, is_withdrawn, processed_at) VALUES ($1, $2, $3, $4, $5);`
+	_, err = tx.Exec(ctx, queryInsertOrder, order, login, sum, true, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
