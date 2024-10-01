@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -325,4 +326,51 @@ func (d *pgxDriver) OrderRegUpdateOne(ctx context.Context, order storagedefault.
 		return err
 	}
 	return nil
+}
+
+func (d *pgxDriver) WithdrawBalance(login, order string, sum, curBalance float64) error {
+	ctx := context.Background()
+	tx, err := d.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	queryUpdate := `UPDATE users SET current = current - $1, withdrawn = withdrawn + $1 WHERE login = $2;`
+	_, err = tx.Exec(ctx, queryUpdate, sum, login)
+	if err != nil {
+		return err
+	}
+
+	queryInsertOrder := `INSERT INTO orders (number, user_login, sum, is_withdrawn, processed_at) VALUES ($1, $2, $3, $4, $5);`
+	_, err = tx.Exec(ctx, queryInsertOrder, order, login, sum, true, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (d *pgxDriver) GetUserWithdrawals(login string) ([]storagemart.Order, error) {
+	ctx := context.Background()
+	query := `SELECT number, sum, processed_at
+			FROM orders
+			WHERE user_login = $1 AND is_withdrawn = $2
+			ORDER BY processed_at ASC`
+
+	rows, err := d.queryRows(ctx, query, login, true)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var withdrawals []storagemart.Order
+	for rows.Next() {
+		var w storagemart.Order
+		if err := rows.Scan(&w.Number, &w.Sum, &w.ProcessedAt); err != nil {
+			return nil, err
+		}
+		withdrawals = append(withdrawals, w)
+	}
+	return withdrawals, nil
 }

@@ -1,10 +1,7 @@
 package storage
 
 import (
-	"context"
-
 	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
-	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 	"github.com/mi4r/gophermart/internal/storage/drivers"
 	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 )
@@ -25,6 +22,9 @@ type StorageGophermart interface {
 	UserOrderCreate(login, number string) error
 	UserOrderReadOne(number string) (storagemart.Order, error)
 	UserOrdersReadByLogin(login string) ([]storagemart.Order, error)
+
+	WithdrawBalance(login, order string, sum, curBalance float64) error
+	GetUserWithdrawals(login string) ([]storagemart.Order, error)
 }
 
 func NewStorageGophermart(driverType string, path string) StorageGophermart {
@@ -37,12 +37,7 @@ func NewStorageGophermart(driverType string, path string) StorageGophermart {
 type StorageAccrualSystem interface {
 	Storage
 	RewardCreate(reward storageaccrual.Reward) error
-	RewardReadAll(ctx context.Context) ([]storageaccrual.Reward, error)
 	OrderRegCreate(order storageaccrual.Order) error
-	OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error)
-	OrderRegUpdateOne(ctx context.Context, order storagedefault.Order) error
-	// Для безопасности и неизменности Accrual
-	OrderRegUpdateStatus(ctx context.Context, status storagedefault.OrderStatus, number string) error
 }
 
 func NewStorageAccrual(driverType string, path string) StorageAccrualSystem {
