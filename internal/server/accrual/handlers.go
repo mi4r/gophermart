@@ -1,6 +1,7 @@
 package serveraccrual
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
+	workeraccrual "github.com/mi4r/gophermart/internal/worker/accrual"
 	"github.com/mi4r/gophermart/lib/helper"
 )
 
@@ -23,6 +25,7 @@ var (
 	errRewardIsInvalidType       = errors.New("reward type must be '%' or 'pt'")
 	errInvalidRewardMatchIsEmpty = errors.New("match key must not be empty")
 	errInvalidOrder              = errors.New("invalid order format")
+	errNotFoundOrder             = errors.New("order not found")
 	errInvalidOrderID            = errors.New("invalid order number format")
 	errOrderAlreadyExists        = errors.New("order already exists")
 )
@@ -115,5 +118,47 @@ func (s *AccrualSystem) ordersPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
+	// Отправляем рассчитывать
+	s.AddTask(
+		workeraccrual.NewTask(order),
+	)
+
 	return c.String(http.StatusAccepted, orderAccepted)
+}
+
+// Get accrual info
+// @Summary Получение информации о расчёте начислений
+// @Description Получение информации о расчёте начислений баллов лояльности за совершённый заказ
+// @Description Номером заказа является последовательность цифр произвольной длины.
+// @Description Номер заказа может быть проверен на корректность ввода с помощью алгоритма Луна.
+// @Tags Сервис
+// @Accept text/plain
+// @Produce  application/json
+// @Param number path string true "Номером заказа"
+// @Success 200 {object} storagedefault.Order "Успешная обработка запроса"
+// @Success 204 {string} string "Заказ не зарегистрирован в системе расчёта"
+// @Failure 429 {string} string "Превышено количество запросов к сервису"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/orders/{number} [get]
+func (s *AccrualSystem) ordersGetHandler(c echo.Context) error {
+	number := c.Param("number")
+	if !helper.IsLuhn(number) {
+		// Нет более подходящего статуса ответа исходя из ТЗ
+		return c.String(http.StatusNoContent, errInvalidOrderID.Error())
+	}
+
+	// TODO 429 status
+	// ...
+	// ctx, cancel := context.WithCancel(context.TODO())
+	ctx := context.Background()
+	order, err := s.storage.OrderRegReadOne(ctx, number)
+	if err != nil {
+		// TODO. Обработка ошибок, пока будет просто ненаход
+		return c.String(http.StatusNoContent, errNotFoundOrder.Error())
+
+		// TODO. 500 status
+		// ...
+	}
+
+	return c.JSON(http.StatusOK, order)
 }

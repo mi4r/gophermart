@@ -11,6 +11,7 @@ import (
 	"github.com/mi4r/gophermart/internal/server"
 	serveraccrual "github.com/mi4r/gophermart/internal/server/accrual"
 	"github.com/mi4r/gophermart/internal/storage"
+	workeraccrual "github.com/mi4r/gophermart/internal/worker/accrual"
 	"github.com/mi4r/gophermart/lib/logger"
 )
 
@@ -31,13 +32,16 @@ func main() {
 			MigrDirName: config.MigrDirName,
 		},
 	)
-	service := serveraccrual.NewAccrualSystem(core)
+	// Канал для передачи задач
+	taskCh := make(chan workeraccrual.Task)
+	worker := workeraccrual.NewWorker(1, taskCh, storage)
+	service := serveraccrual.NewAccrualSystem(core, taskCh)
 
 	// Configure
 	service.SetRoutes()
 	service.SetStorage(storage)
 	go service.Server.Start()
-
+	worker.Start()
 	// Канал для перехвата сигналов
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
@@ -45,5 +49,7 @@ func main() {
 	sig := <-sigChan
 	slog.Debug("received signal", slog.String("signal", sig.String()))
 
+	// Закрываем канал задач
+	close(taskCh)
 	service.Server.Shutdown()
 }

@@ -5,15 +5,18 @@ import (
 
 	"github.com/mi4r/gophermart/internal/server"
 	"github.com/mi4r/gophermart/internal/storage"
+	workeraccrual "github.com/mi4r/gophermart/internal/worker/accrual"
 )
 
 type AccrualSystem struct {
 	*server.Server
+	taskCh  chan workeraccrual.Task
 	storage storage.StorageAccrualSystem
 }
 
-func NewAccrualSystem(server *server.Server) *AccrualSystem {
+func NewAccrualSystem(server *server.Server, taskCh chan workeraccrual.Task) *AccrualSystem {
 	return &AccrualSystem{
+		taskCh: taskCh,
 		Server: server,
 	}
 }
@@ -22,7 +25,7 @@ func (s *AccrualSystem) SetRoutes() {
 	s.Router.GET("/ping", s.pingHandler)
 	// TODO
 	gAPI := s.Router.Group("/api")
-	// gApi.GET("/orders/:number", s.ordersGetHandler)
+	gAPI.GET("/orders/:number", s.ordersGetHandler)
 	gAPI.POST("/orders", s.ordersPostHandler)
 	gAPI.POST("/goods", s.rewardPostHandler)
 }
@@ -37,4 +40,8 @@ func (s *AccrualSystem) SetStorage(storage storage.StorageAccrualSystem) {
 	// Try auto-migration
 	s.storage.Migrate(s.Config.MigrDirName)
 
+}
+
+func (s *AccrualSystem) AddTask(task workeraccrual.Task) {
+	s.taskCh <- task
 }

@@ -14,26 +14,20 @@ definitions:
       password:
         type: string
     type: object
+  Good:
+    properties:
+      description:
+        type: string
+      price:
+        type: number
+    type: object
   Order:
     properties:
-      accrual:
-        type: number
-      is_withdrawn:
-        type: boolean
-      number:
-        example: "12345678903"
-        type: string
-      processed_at:
-        example: "2020-12-10T15:15:45+03:00"
-        format: date-time
-        type: string
-      status:
-        $ref: '#/definitions/storagedefault.OrderStatus'
-      sum:
-        type: number
-      uploaded_at:
-        example: "2020-12-10T15:15:45+03:00"
-        format: date-time
+      goods:
+        items:
+          $ref: '#/definitions/Good'
+        type: array
+      order:
         type: string
     type: object
   Reward:
@@ -53,15 +47,27 @@ definitions:
     x-enum-varnames:
     - RewardTypePt
     - RewardTypePercent
+  storagedefault.Order:
+    properties:
+      accrual:
+        type: number
+      number:
+        example: "12345678903"
+        type: string
+      status:
+        $ref: '#/definitions/storagedefault.OrderStatus'
+    type: object
   storagedefault.OrderStatus:
     enum:
     - NEW
+    - REGISTERED
     - PROCESSING
     - INVALID
     - PROCESSED
     type: string
     x-enum-varnames:
     - StatusNew
+    - StatusRegistered
     - StatusProcessing
     - StatusInvalid
     - StatusProcessed
@@ -145,6 +151,42 @@ paths:
       summary: Регистрация нового совершённого заказа
       tags:
       - Админ
+  /api/orders/{number}:
+    get:
+      consumes:
+      - text/plain
+      description: |-
+        Получение информации о расчёте начислений баллов лояльности за совершённый заказ
+        Номером заказа является последовательность цифр произвольной длины.
+        Номер заказа может быть проверен на корректность ввода с помощью алгоритма Луна.
+      parameters:
+      - description: Номером заказа
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            $ref: '#/definitions/storagedefault.Order'
+        "204":
+          description: Заказ не зарегистрирован в системе расчёта
+          schema:
+            type: string
+        "429":
+          description: Превышено количество запросов к сервису
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получение информации о расчёте начислений
+      tags:
+      - Сервис
   /api/user/balance:
     get:
       description: |-
