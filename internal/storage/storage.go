@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"context"
+
 	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
+	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 	"github.com/mi4r/gophermart/internal/storage/drivers"
 	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 )
@@ -35,6 +38,7 @@ type StorageAccrualSystem interface {
 	Storage
 	RewardCreate(reward storageaccrual.Reward) error
 	OrderRegCreate(order storageaccrual.Order) error
+	OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error)
 }
 
 func NewStorageAccrual(driverType string, path string) StorageAccrualSystem {

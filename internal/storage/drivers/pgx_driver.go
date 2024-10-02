@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
+	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 	storagemart "github.com/mi4r/gophermart/internal/storage/gophermart"
 )
 
@@ -272,4 +273,19 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 	}
 	errs = append(errs, tx.Commit(ctx))
 	return errors.Join(errs...)
+}
+
+func (d *pgxDriver) OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error) {
+	var o storagedefault.Order
+	if err := d.queryRow(ctx, `
+	SELECT order_number, status, accrual
+	FROM orders
+		WHERE number = $1
+		LIMIT 1
+	`, number).Scan(
+		&o.Number, &o.Status, &o.Accrual,
+	); err != nil {
+		return o, err
+	}
+	return o, nil
 }

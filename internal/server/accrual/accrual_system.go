@@ -22,7 +22,7 @@ func (s *AccrualSystem) SetRoutes() {
 	s.Router.GET("/ping", s.pingHandler)
 	// TODO
 	gAPI := s.Router.Group("/api")
-	// gApi.GET("/orders/:number", s.ordersGetHandler)
+	gAPI.GET("/orders/:number", s.ordersGetHandler)
 	gAPI.POST("/orders", s.ordersPostHandler)
 	gAPI.POST("/goods", s.rewardPostHandler)
 }
