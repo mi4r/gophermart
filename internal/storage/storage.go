@@ -37,8 +37,12 @@ func NewStorageGophermart(driverType string, path string) StorageGophermart {
 type StorageAccrualSystem interface {
 	Storage
 	RewardCreate(reward storageaccrual.Reward) error
+	RewardReadAll(ctx context.Context) ([]storageaccrual.Reward, error)
 	OrderRegCreate(order storageaccrual.Order) error
 	OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error)
+	OrderRegUpdateOne(ctx context.Context, order storagedefault.Order) error
+	// Для безопасности и неизменности Accrual
+	OrderRegUpdateStatus(ctx context.Context, status storagedefault.OrderStatus, number string) error
 }
 
 func NewStorageAccrual(driverType string, path string) StorageAccrualSystem {

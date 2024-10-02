@@ -453,28 +453,34 @@ const docTemplate = `{
                 }
             }
         },
-        "Good": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                }
-            }
-        },
         "Order": {
             "type": "object",
             "properties": {
-                "goods": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Good"
-                    }
+                "accrual": {
+                    "type": "number"
                 },
-                "order": {
-                    "type": "string"
+                "is_withdrawn": {
+                    "type": "boolean"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "12345678903"
+                },
+                "processed_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2020-12-10T15:15:45+03:00"
+                },
+                "status": {
+                    "$ref": "#/definitions/storagedefault.OrderStatus"
+                },
+                "sum": {
+                    "type": "number"
+                },
+                "uploaded_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2020-12-10T15:15:45+03:00"
                 }
             }
         },
@@ -522,12 +528,14 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "NEW",
+                "REGISTERED",
                 "PROCESSING",
                 "INVALID",
                 "PROCESSED"
             ],
             "x-enum-varnames": [
                 "StatusNew",
+                "StatusRegistered",
                 "StatusProcessing",
                 "StatusInvalid",
                 "StatusProcessed"

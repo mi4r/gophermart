@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
+	workeraccrual "github.com/mi4r/gophermart/internal/worker/accrual"
 	"github.com/mi4r/gophermart/lib/helper"
 )
 
@@ -117,6 +118,11 @@ func (s *AccrualSystem) ordersPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
+	// Отправляем рассчитывать
+	s.AddTask(
+		workeraccrual.NewTask(order),
+	)
+
 	return c.String(http.StatusAccepted, orderAccepted)
 }
 
@@ -153,5 +159,6 @@ func (s *AccrualSystem) ordersGetHandler(c echo.Context) error {
 		// TODO. 500 status
 		// ...
 	}
+
 	return c.JSON(http.StatusOK, order)
 }

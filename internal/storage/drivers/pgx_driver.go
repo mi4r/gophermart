@@ -238,6 +238,25 @@ func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
 	return nil
 }
 
+func (d *pgxDriver) RewardReadAll(ctx context.Context) ([]storageaccrual.Reward, error) {
+	var rewards []storageaccrual.Reward
+	rows, err := d.queryRows(ctx, `SELECT match, reward, reward_type FROM rewards`)
+	if err != nil {
+		return rewards, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var r storageaccrual.Reward
+		if err := rows.Scan(
+			&r.Match, &r.Reward, &r.RewardType,
+		); err != nil {
+			slog.Error("scan error", slog.String("err", err.Error()))
+			return rewards, err
+		}
+	}
+	return rewards, nil
+}
+
 func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 	ctx := context.Background()
 	tx, err := d.connPool.Begin(ctx)
@@ -247,7 +266,7 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 	var orderID int64
 	defer tx.Rollback(ctx)
 	if err := tx.QueryRow(ctx, `
-	INSERT INTO orders (order_number) VALUES ($1) RETURNING id`, o.Order).Scan(&orderID); err != nil {
+	INSERT INTO orders (order_number, status) VALUES ($1, $2) RETURNING id`, o.Order, storagedefault.StatusRegistered).Scan(&orderID); err != nil {
 		return err
 	}
 	slog.Debug("order id is fetch", slog.Int64("id", orderID), slog.String("order", o.Order))
@@ -288,4 +307,22 @@ func (d *pgxDriver) OrderRegReadOne(ctx context.Context, number string) (storage
 		return o, err
 	}
 	return o, nil
+}
+
+func (d *pgxDriver) OrderRegUpdateStatus(ctx context.Context, status storagedefault.OrderStatus, number string) error {
+	if _, err := d.exec(ctx, `
+	UPDATE orders SET status=$1 WHERE order_number=$2
+	`, status, number); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *pgxDriver) OrderRegUpdateOne(ctx context.Context, order storagedefault.Order) error {
+	if _, err := d.exec(ctx, `
+	UPDATE orders SET status=$1, accrual=$2 WHERE order_number=$3
+	`, order.Status, order.Accrual, order.Number); err != nil {
+		return err
+	}
+	return nil
 }

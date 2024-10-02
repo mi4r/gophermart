@@ -5,15 +5,18 @@ import (
 
 	"github.com/mi4r/gophermart/internal/server"
 	"github.com/mi4r/gophermart/internal/storage"
+	workeraccrual "github.com/mi4r/gophermart/internal/worker/accrual"
 )
 
 type AccrualSystem struct {
 	*server.Server
+	taskCh  chan workeraccrual.Task
 	storage storage.StorageAccrualSystem
 }
 
-func NewAccrualSystem(server *server.Server) *AccrualSystem {
+func NewAccrualSystem(server *server.Server, taskCh chan workeraccrual.Task) *AccrualSystem {
 	return &AccrualSystem{
+		taskCh: taskCh,
 		Server: server,
 	}
 }
@@ -37,4 +40,8 @@ func (s *AccrualSystem) SetStorage(storage storage.StorageAccrualSystem) {
 	// Try auto-migration
 	s.storage.Migrate(s.Config.MigrDirName)
 
+}
+
+func (s *AccrualSystem) AddTask(task workeraccrual.Task) {
+	s.taskCh <- task
 }

@@ -14,20 +14,26 @@ definitions:
       password:
         type: string
     type: object
-  Good:
-    properties:
-      description:
-        type: string
-      price:
-        type: number
-    type: object
   Order:
     properties:
-      goods:
-        items:
-          $ref: '#/definitions/Good'
-        type: array
-      order:
+      accrual:
+        type: number
+      is_withdrawn:
+        type: boolean
+      number:
+        example: "12345678903"
+        type: string
+      processed_at:
+        example: "2020-12-10T15:15:45+03:00"
+        format: date-time
+        type: string
+      status:
+        $ref: '#/definitions/storagedefault.OrderStatus'
+      sum:
+        type: number
+      uploaded_at:
+        example: "2020-12-10T15:15:45+03:00"
+        format: date-time
         type: string
     type: object
   Reward:
@@ -60,12 +66,14 @@ definitions:
   storagedefault.OrderStatus:
     enum:
     - NEW
+    - REGISTERED
     - PROCESSING
     - INVALID
     - PROCESSED
     type: string
     x-enum-varnames:
     - StatusNew
+    - StatusRegistered
     - StatusProcessing
     - StatusInvalid
     - StatusProcessed
