@@ -38,15 +38,12 @@ func main() {
 	service.SetStorage(storage)
 	go service.Server.Start()
 
-	// Канал для сигнала завершения
-	done := make(chan struct{})
-
 	// Канал для перехвата сигналов
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	sig := <-sigChan
 	slog.Debug("received signal", slog.String("signal", sig.String()))
-	close(done)
+
 	service.Server.Shutdown()
 }

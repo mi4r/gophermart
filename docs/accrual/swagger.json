@@ -113,6 +113,56 @@
                 }
             }
         },
+        "/api/orders/{number}": {
+            "get": {
+                "description": "Получение информации о расчёте начислений баллов лояльности за совершённый заказ\nНомером заказа является последовательность цифр произвольной длины.\nНомер заказа может быть проверен на корректность ввода с помощью алгоритма Луна.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Сервис"
+                ],
+                "summary": "Получение информации о расчёте начислений",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Номером заказа",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса",
+                        "schema": {
+                            "$ref": "#/definitions/storagedefault.Order"
+                        }
+                    },
+                    "204": {
+                        "description": "Заказ не зарегистрирован в системе расчёта",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "429": {
+                        "description": "Превышено количество запросов к сервису",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/user/balance": {
             "get": {
                 "description": "Хендлер доступен только авторизованному пользователю.\nВ ответе должны содержаться данные о текущей сумме баллов лояльности,\nа также сумме использованных за весь период регистрации баллов.",
@@ -397,28 +447,34 @@
                 }
             }
         },
-        "Good": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                }
-            }
-        },
         "Order": {
             "type": "object",
             "properties": {
-                "goods": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Good"
-                    }
+                "accrual": {
+                    "type": "number"
                 },
-                "order": {
-                    "type": "string"
+                "is_withdrawn": {
+                    "type": "boolean"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "12345678903"
+                },
+                "processed_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2020-12-10T15:15:45+03:00"
+                },
+                "status": {
+                    "$ref": "#/definitions/storagedefault.OrderStatus"
+                },
+                "sum": {
+                    "type": "number"
+                },
+                "uploaded_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2020-12-10T15:15:45+03:00"
                 }
             }
         },
@@ -445,6 +501,38 @@
             "x-enum-varnames": [
                 "RewardTypePt",
                 "RewardTypePercent"
+            ]
+        },
+        "storagedefault.Order": {
+            "type": "object",
+            "properties": {
+                "accrual": {
+                    "type": "number"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "12345678903"
+                },
+                "status": {
+                    "$ref": "#/definitions/storagedefault.OrderStatus"
+                }
+            }
+        },
+        "storagedefault.OrderStatus": {
+            "type": "string",
+            "enum": [
+                "NEW",
+                "REGISTERED",
+                "PROCESSING",
+                "INVALID",
+                "PROCESSED"
+            ],
+            "x-enum-varnames": [
+                "StatusNew",
+                "StatusRegistered",
+                "StatusProcessing",
+                "StatusInvalid",
+                "StatusProcessed"
             ]
         }
     }
