@@ -372,5 +372,6 @@ func (d *pgxDriver) GetUserWithdrawals(login string) ([]storagemart.Order, error
 		}
 		withdrawals = append(withdrawals, w)
 	}
+
 	return withdrawals, nil
 }
