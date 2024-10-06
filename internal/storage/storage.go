@@ -24,6 +24,7 @@ type StorageGophermart interface {
 	UserOrdersReadByLogin(login string) ([]storagemart.Order, error)
 
 	WithdrawBalance(login, order string, sum, curBalance float64) error
+	GetUserWithdrawals(login string) ([]storagemart.Order, error)
 }
 
 func NewStorageGophermart(driverType string, path string) StorageGophermart {

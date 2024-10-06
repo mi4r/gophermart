@@ -297,3 +297,27 @@ func (d *pgxDriver) WithdrawBalance(login, order string, sum, curBalance float64
 
 	return tx.Commit(ctx)
 }
+
+func (d *pgxDriver) GetUserWithdrawals(login string) ([]storagemart.Order, error) {
+	ctx := context.Background()
+	query := `SELECT number, sum, processed_at
+			FROM orders
+			WHERE user_login = $1 AND is_withdrawn = $2
+			ORDER BY processed_at ASC`
+
+	rows, err := d.queryRows(ctx, query, login, true)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var withdrawals []storagemart.Order
+	for rows.Next() {
+		var w storagemart.Order
+		if err := rows.Scan(&w.Number, &w.Sum, &w.ProcessedAt); err != nil {
+			return nil, err
+		}
+		withdrawals = append(withdrawals, w)
+	}
+	return withdrawals, nil
+}

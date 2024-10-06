@@ -228,7 +228,7 @@ func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 // @Failure 401 {string} string "Пользователь не авторизован"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/balance [get]
-func (s *Gophermart) userGetBalance(c echo.Context) error {
+func (s *Gophermart) userGetBalanceHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
@@ -256,7 +256,7 @@ func (s *Gophermart) userGetBalance(c echo.Context) error {
 // @Failure 422 {string} string "Неверный номер заказа"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/balance/withdraw [post]
-func (s *Gophermart) userBalanceWithdraw(c echo.Context) error {
+func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
 		c.String(http.StatusUnauthorized, errUnauthorized.Error())
@@ -288,4 +288,34 @@ func (s *Gophermart) userBalanceWithdraw(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, withdrawCompleted)
+}
+
+// Get balance withdrawals
+// @Summary
+// @Description Хендлер доступен только авторизованному пользователю.
+// @Description Факты выводов в выдаче должны быть отсортированы по времени вывода от самых старых к самым новым.
+// @Description Формат даты — RFC3339.
+// @Tags Заказы
+// @Produce json
+// @Success 200 {string} string "Успешная обработка запроса"
+// @Failure 204 {string} string "Нет ни одного списания"
+// @Failure 401 {string} string "Пользователь не авторизован"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/user/withdrawals [get]
+func (s *Gophermart) getBalanceWithdrawalsHandler(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
+	if !ok {
+		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+
+	withdrawals, err := s.storage.GetUserWithdrawals(login)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(withdrawals) == 0 {
+		c.NoContent(http.StatusNoContent)
+	}
+
+	return c.JSON(http.StatusOK, withdrawals)
 }
