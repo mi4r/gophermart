@@ -143,7 +143,7 @@ func (s *Gophermart) userLoginHandler(c echo.Context) error {
 func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
-		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
 	bodyReader := c.Request().Body
@@ -202,7 +202,7 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
-		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
 	orders, err := s.storage.UserOrdersReadByLogin(login)
@@ -211,7 +211,7 @@ func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 	}
 
 	if len(orders) == 0 {
-		c.NoContent(http.StatusNoContent)
+		return c.NoContent(http.StatusNoContent)
 	}
 
 	return c.JSON(http.StatusOK, orders)
@@ -231,12 +231,12 @@ func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 func (s *Gophermart) userGetBalanceHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
-		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
 	user, err := s.storage.UserReadOne(login)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, user.GetBalance())
@@ -259,7 +259,7 @@ func (s *Gophermart) userGetBalanceHandler(c echo.Context) error {
 func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
-		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 	var req struct {
 		Order string  `json:"order"`
@@ -275,7 +275,7 @@ func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
 
 	user, err := s.storage.UserReadOne(login)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	curBalance := user.GetBalance().Current
 	if curBalance < req.Sum {
@@ -305,7 +305,7 @@ func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
 func (s *Gophermart) getBalanceWithdrawalsHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
-		c.String(http.StatusUnauthorized, errUnauthorized.Error())
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
 	withdrawals, err := s.storage.GetUserWithdrawals(login)
@@ -314,7 +314,7 @@ func (s *Gophermart) getBalanceWithdrawalsHandler(c echo.Context) error {
 	}
 
 	if len(withdrawals) == 0 {
-		c.NoContent(http.StatusNoContent)
+		return c.NoContent(http.StatusNoContent)
 	}
 
 	return c.JSON(http.StatusOK, withdrawals)
