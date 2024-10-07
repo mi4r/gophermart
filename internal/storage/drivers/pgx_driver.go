@@ -194,7 +194,7 @@ func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
 func (d *pgxDriver) RewardReadAll() ([]storageaccrual.Reward, error) {
 	ctx := context.Background()
 	var rewards []storageaccrual.Reward
-	rows, err := d.queryRows(ctx, `SELECT match, reward, reward_type FROM rewards`)
+	rows, err := d.queryRows(ctx, "SELECT match, reward, reward_type FROM rewards")
 	if err != nil {
 		return rewards, err
 	}
@@ -207,6 +207,7 @@ func (d *pgxDriver) RewardReadAll() ([]storageaccrual.Reward, error) {
 			slog.Error("scan error", slog.String("err", err.Error()))
 			return rewards, err
 		}
+		rewards = append(rewards, r)
 	}
 	return rewards, nil
 }
@@ -245,7 +246,7 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 		}
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (d *pgxDriver) OrderRegReadOne(number string) (storagedefault.Order, error) {

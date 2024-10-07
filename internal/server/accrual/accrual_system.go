@@ -43,5 +43,6 @@ func (s *AccrualSystem) SetStorage(storage storage.StorageAccrualSystem) {
 }
 
 func (s *AccrualSystem) AddTask(task workeraccrual.Task) {
+	slog.Debug("new task", slog.Any("order", task.Order))
 	s.taskCh <- task
 }

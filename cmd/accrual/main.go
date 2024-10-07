@@ -33,12 +33,14 @@ func main() {
 	)
 	// Канал для передачи задач
 	taskCh := make(chan workeraccrual.Task)
-	worker := workeraccrual.NewWorker(1, taskCh, storage)
+	worker := workeraccrual.NewWorker(1, taskCh)
+
 	service := serveraccrual.NewAccrualSystem(core, taskCh)
 
 	// Configure
 	service.SetRoutes()
 	service.SetStorage(storage)
+	worker.SetStorage(storage)
 	go service.Server.Start()
 	worker.Start()
 	// Канал для перехвата сигналов
