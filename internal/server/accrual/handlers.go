@@ -1,7 +1,6 @@
 package serveraccrual
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -14,8 +13,8 @@ import (
 )
 
 const (
-	rewardCreated string = "new reward will be created"
-	orderAccepted string = "order accepted"
+	rewardCreated = "new reward will be created"
+	orderAccepted = "order accepted"
 )
 
 var (
@@ -150,8 +149,7 @@ func (s *AccrualSystem) ordersGetHandler(c echo.Context) error {
 	// TODO 429 status
 	// ...
 	// ctx, cancel := context.WithCancel(context.TODO())
-	ctx := context.Background()
-	order, err := s.storage.OrderRegReadOne(ctx, number)
+	order, err := s.storage.OrderRegReadOne(number)
 	if err != nil {
 		// TODO. Обработка ошибок, пока будет просто ненаход
 		return c.String(http.StatusNoContent, errNotFoundOrder.Error())

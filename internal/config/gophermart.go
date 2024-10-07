@@ -12,7 +12,6 @@ type GophermartConfig struct {
 	StoragePath          string
 	AccrualSystemAddress string
 	SecretKey            string
-	MigrDirName          string
 }
 
 func NewGophermartConfig() GophermartConfig {
@@ -46,8 +45,6 @@ func loadGophermartFromFlags() GophermartConfig {
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
 	c.SecretKey = *k
-
-	c.MigrDirName = migrDirNameGophermart
 
 	return c
 }

@@ -10,7 +10,6 @@ type AccrualConfig struct {
 	DriverType  string
 	LogLevel    string
 	StoragePath string
-	MigrDirName string
 }
 
 func NewAccrualConfig() AccrualConfig {
@@ -39,8 +38,6 @@ func loadAccSysConfigFromFlags() AccrualConfig {
 
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
-
-	c.MigrDirName = migrDirNameAccrual
 
 	return c
 }

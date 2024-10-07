@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	successUserLogin   string = "user has been successfully registered and authenticated"
-	orderAlreadyUpload string = "order number already uploaded by this user"
-	orderAccepted      string = "order number accepted for processing"
+	successUserLogin   = "user has been successfully registered and authenticated"
+	orderAlreadyUpload = "order number already uploaded by this user"
+	orderAccepted      = "order number accepted for processing"
 )
 
 var (

@@ -182,18 +182,6 @@ func TestUsersReadOne(t *testing.T) {
 	}
 }
 
-func TestUsersReadAll(t *testing.T) {
-	t.Run("read_UsersAll", func(t *testing.T) {
-		users, err := storage.UserReadAll()
-		if err != nil {
-			t.Error(err)
-		}
-		if len(users) == 0 {
-			t.Error("users array size 0")
-		}
-	})
-}
-
 func TestOrdersCreate(t *testing.T) {
 	tests := []struct {
 		name    string

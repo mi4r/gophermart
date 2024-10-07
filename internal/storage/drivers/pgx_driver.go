@@ -2,7 +2,6 @@ package drivers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -77,29 +76,6 @@ func (d *pgxDriver) Ping() error {
 	return d.connPool.Ping(context.Background())
 }
 
-// Автоматическая миграция базы. Думаю прикрутить ключ при запуске
-func (d *pgxDriver) autoMigrate(migrDirName string, isTest bool) (err error) {
-
-	mpath := migrDefaultPath
-	if !isTest {
-		mpath, err = filepath.Abs(
-			filepath.Join("internal", "storage", migrDirName, "migrations"))
-		if err != nil {
-			return err
-		}
-	}
-
-	slog.Debug("migration init", slog.String("path", mpath))
-	migr, err := migrate.New(
-		fmt.Sprintf("file://%s", mpath),
-		d.dbURL,
-	)
-	if err != nil {
-		return err
-	}
-	return migr.Up()
-}
-
 func (d *pgxDriver) autoDefaultMigrate() error {
 	mpath, err := filepath.Abs(
 		filepath.Join("internal", "storage", migrDefaultPath, "migrations"))
@@ -145,29 +121,6 @@ func (d *pgxDriver) UserReadOne(login string) (storagemart.User, error) {
 	return user, nil
 }
 
-func (d *pgxDriver) UserReadAll() ([]storagemart.User, error) {
-	var users []storagemart.User
-	ctx := context.Background()
-	rows, err := d.queryRows(ctx, `
-	SELECT login, password, current, withdrawn FROM users
-	`)
-	if err != nil {
-		return users, err
-	}
-	defer rows.Close()
-	var errs []error
-	for rows.Next() {
-		var user storagemart.User
-		if err := rows.Scan(&user.Login, &user.Password, &user.Current, &user.Withdrawn); err != nil {
-			slog.Error("scan error", slog.String("err", err.Error()))
-			errs = append(errs, err)
-		}
-		users = append(users, user)
-	}
-
-	return users, errors.Join(errs...)
-}
-
 func (d *pgxDriver) UserOrderCreate(login, number string) error {
 	_, err := d.exec(context.Background(), `
 	INSERT INTO user_orders (number, user_login)
@@ -210,7 +163,7 @@ func (d *pgxDriver) UserOrdersReadByLogin(login string) ([]storagemart.Order, er
 		return orders, err
 	}
 	defer rows.Close()
-	var errs []error
+
 	for rows.Next() {
 		var o storagemart.Order
 		if err := rows.Scan(
@@ -218,12 +171,12 @@ func (d *pgxDriver) UserOrdersReadByLogin(login string) ([]storagemart.Order, er
 			&o.UploadedAt, &o.UserLogin,
 		); err != nil {
 			slog.Error("scan error", slog.String("err", err.Error()))
-			errs = append(errs, err)
+			return []storagemart.Order{}, err
 		}
 		orders = append(orders, o)
 	}
 
-	return orders, errors.Join(errs...)
+	return orders, nil
 }
 
 func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
@@ -238,7 +191,8 @@ func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
 	return nil
 }
 
-func (d *pgxDriver) RewardReadAll(ctx context.Context) ([]storageaccrual.Reward, error) {
+func (d *pgxDriver) RewardReadAll() ([]storageaccrual.Reward, error) {
+	ctx := context.Background()
 	var rewards []storageaccrual.Reward
 	rows, err := d.queryRows(ctx, `SELECT match, reward, reward_type FROM rewards`)
 	if err != nil {
@@ -273,7 +227,7 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 
 	sqlScriptCreateGoods := `INSERT INTO goods (description, price) VALUES ($1, $2) RETURNING id`
 	sqlScriptGoodInOrder := `INSERT INTO order_goods (order_id, good_id) VALUES ($1, $2)`
-	var errs []error
+
 	for _, good := range o.Goods {
 		slog.Debug("add good of order",
 			slog.String("description", good.Description),
@@ -283,18 +237,19 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 		if err := tx.QueryRow(
 			ctx, sqlScriptCreateGoods, good.Description, good.Price).
 			Scan(&goodID); err != nil {
-			errs = append(errs, err)
+			return err
 		}
 		if _, err := tx.Exec(
 			ctx, sqlScriptGoodInOrder, orderID, goodID); err != nil {
-			errs = append(errs, err)
+			return err
 		}
 	}
-	errs = append(errs, tx.Commit(ctx))
-	return errors.Join(errs...)
+
+	return nil
 }
 
-func (d *pgxDriver) OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error) {
+func (d *pgxDriver) OrderRegReadOne(number string) (storagedefault.Order, error) {
+	ctx := context.Background()
 	var o storagedefault.Order
 	if err := d.queryRow(ctx, `
 	SELECT order_number, status, accrual
@@ -309,7 +264,8 @@ func (d *pgxDriver) OrderRegReadOne(ctx context.Context, number string) (storage
 	return o, nil
 }
 
-func (d *pgxDriver) OrderRegUpdateStatus(ctx context.Context, status storagedefault.OrderStatus, number string) error {
+func (d *pgxDriver) OrderRegUpdateStatus(status storagedefault.OrderStatus, number string) error {
+	ctx := context.Background()
 	if _, err := d.exec(ctx, `
 	UPDATE orders SET status=$1 WHERE order_number=$2
 	`, status, number); err != nil {
@@ -318,7 +274,8 @@ func (d *pgxDriver) OrderRegUpdateStatus(ctx context.Context, status storagedefa
 	return nil
 }
 
-func (d *pgxDriver) OrderRegUpdateOne(ctx context.Context, order storagedefault.Order) error {
+func (d *pgxDriver) OrderRegUpdateOne(order storagedefault.Order) error {
+	ctx := context.Background()
 	if _, err := d.exec(ctx, `
 	UPDATE orders SET status=$1, accrual=$2 WHERE order_number=$3
 	`, order.Status, order.Accrual, order.Number); err != nil {

@@ -29,7 +29,6 @@ func main() {
 		server.Config{
 			ServiceName: server.AccrualName,
 			Listen:      config.ListenAddr,
-			MigrDirName: config.MigrDirName,
 		},
 	)
 	// Канал для передачи задач

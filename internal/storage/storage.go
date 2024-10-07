@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"context"
-
 	storageaccrual "github.com/mi4r/gophermart/internal/storage/accrual"
 	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 	"github.com/mi4r/gophermart/internal/storage/drivers"
@@ -20,14 +18,13 @@ type StorageGophermart interface {
 	Storage
 	UserCreate(user storagemart.User) error
 	UserReadOne(login string) (storagemart.User, error)
-	UserReadAll() ([]storagemart.User, error)
 
 	UserOrderCreate(login, number string) error
 	UserOrderReadOne(number string) (storagemart.Order, error)
 	UserOrdersReadByLogin(login string) ([]storagemart.Order, error)
 }
 
-func NewStorageGophermart(driverType string, path string) StorageGophermart {
+func NewStorageGophermart(driverType, path string) StorageGophermart {
 	switch driverType {
 	default:
 		return drivers.NewPgxDriver(path)
@@ -37,15 +34,15 @@ func NewStorageGophermart(driverType string, path string) StorageGophermart {
 type StorageAccrualSystem interface {
 	Storage
 	RewardCreate(reward storageaccrual.Reward) error
-	RewardReadAll(ctx context.Context) ([]storageaccrual.Reward, error)
+	RewardReadAll() ([]storageaccrual.Reward, error)
 	OrderRegCreate(order storageaccrual.Order) error
-	OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error)
-	OrderRegUpdateOne(ctx context.Context, order storagedefault.Order) error
+	OrderRegReadOne(number string) (storagedefault.Order, error)
+	OrderRegUpdateOne(order storagedefault.Order) error
 	// Для безопасности и неизменности Accrual
-	OrderRegUpdateStatus(ctx context.Context, status storagedefault.OrderStatus, number string) error
+	OrderRegUpdateStatus(status storagedefault.OrderStatus, number string) error
 }
 
-func NewStorageAccrual(driverType string, path string) StorageAccrualSystem {
+func NewStorageAccrual(driverType, path string) StorageAccrualSystem {
 	switch driverType {
 	default:
 		return drivers.NewPgxDriver(path)
