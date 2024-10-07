@@ -106,8 +106,8 @@ func (w *Worker) Execute(task Task) error {
 	return nil
 }
 
-func (w *Worker) Calculate(price, reward float64, reward_type storageaccrual.RewardType) float64 {
-	switch reward_type {
+func (w *Worker) Calculate(price, reward float64, rewardType storageaccrual.RewardType) float64 {
+	switch rewardType {
 	case storageaccrual.RewardTypePercent:
 		return (price / 100) * reward
 	case storageaccrual.RewardTypePt:

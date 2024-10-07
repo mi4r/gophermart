@@ -14,26 +14,20 @@ definitions:
       password:
         type: string
     type: object
+  Good:
+    properties:
+      description:
+        type: string
+      price:
+        type: number
+    type: object
   Order:
     properties:
-      accrual:
-        type: number
-      is_withdrawn:
-        type: boolean
-      number:
-        example: "12345678903"
-        type: string
-      processed_at:
-        example: "2020-12-10T15:15:45+03:00"
-        format: date-time
-        type: string
-      status:
-        $ref: '#/definitions/storagedefault.OrderStatus'
-      sum:
-        type: number
-      uploaded_at:
-        example: "2020-12-10T15:15:45+03:00"
-        format: date-time
+      goods:
+        items:
+          $ref: '#/definitions/Good'
+        type: array
+      order:
         type: string
     type: object
   Reward:
@@ -216,6 +210,39 @@ paths:
             type: string
       tags:
       - Пользователь
+  /api/user/balance/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Хендлер доступен только авторизованному пользователю.
+        Номер заказа представляет собой гипотетический номер
+        нового заказа пользователя, в счёт оплаты которого списываются баллы.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            type: string
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "402":
+          description: На счету недостаточно средств
+          schema:
+            type: string
+        "422":
+          description: Неверный номер заказа
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Заказы
   /api/user/login:
     post:
       consumes:
@@ -361,6 +388,33 @@ paths:
       summary: Регистрация пользователя
       tags:
       - Пользователь
+  /api/user/withdrawals:
+    get:
+      description: |-
+        Хендлер доступен только авторизованному пользователю.
+        Факты выводов в выдаче должны быть отсортированы по времени вывода от самых старых к самым новым.
+        Формат даты — RFC3339.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            type: string
+        "204":
+          description: Нет ни одного списания
+          schema:
+            type: string
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Заказы
   /ping:
     get:
       description: Простая проверка состояния сервера
