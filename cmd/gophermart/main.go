@@ -29,7 +29,6 @@ func main() {
 			ServiceName: server.GophermartName,
 			Listen:      config.ListenAddr,
 			SecretKey:   config.SecretKey,
-			MigrDirName: config.MigrDirName,
 		},
 	)
 	service := servermart.NewGophermart(core)

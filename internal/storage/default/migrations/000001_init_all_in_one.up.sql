@@ -1,10 +1,26 @@
 BEGIN;
 
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_enum') THEN
+        CREATE TYPE status_enum AS ENUM ('NEW', 'REGISTERED', 'PROCESSING', 'INVALID', 'PROCESSED');
+    END IF;
+END
+$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'reward_type_enum') THEN
+        CREATE TYPE reward_type_enum AS ENUM ('%', 'pt');
+    END IF;
+END
+$$;
+
 CREATE TABLE rewards (
     id SERIAL PRIMARY KEY,
     match VARCHAR(255) UNIQUE NOT NULL,
     reward DOUBLE PRECISION NOT NULL,
-    reward_type VARCHAR(2) DEFAULT '%' NOT NULL CHECK (reward_type IN ('%', 'pt'))
+    reward_type reward_type_enum DEFAULT '%' NOT NULL
 );
 
 CREATE TABLE goods (
@@ -16,7 +32,7 @@ CREATE TABLE goods (
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     order_number VARCHAR(255) UNIQUE NOT NULL,
-    status VARCHAR(50) DEFAULT 'NEW' NOT NULL CHECK (status IN ('NEW', 'REGISTERED', 'PROCESSING', 'INVALID', 'PROCESSED')),
+    status status_enum DEFAULT 'NEW' NOT NULL,
     accrual DOUBLE PRECISION
 );
 
@@ -39,7 +55,7 @@ CREATE TABLE users (
 CREATE TABLE user_orders (
     id SERIAL PRIMARY KEY,
     number VARCHAR(255) UNIQUE NOT NULL,
-    status VARCHAR(50) DEFAULT 'NEW' NOT NULL CHECK (status IN ('NEW', 'REGISTERED', 'PROCESSING', 'INVALID', 'PROCESSED')),
+    status status_enum DEFAULT 'NEW' NOT NULL,
     sum DOUBLE PRECISION DEFAULT 0 NOT NULL,
     is_withdrawn BOOLEAN DEFAULT false NOT NULL,
     accrual DOUBLE PRECISION DEFAULT 0 NOT NULL,

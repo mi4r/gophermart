@@ -1,6 +1,0 @@
-BEGIN;
-
-DROP TABLE orders;
-DROP TABLE users;
-
-COMMIT;

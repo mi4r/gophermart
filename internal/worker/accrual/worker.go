@@ -1,7 +1,6 @@
 package workeraccrual
 
 import (
-	"context"
 	"log/slog"
 	"os"
 	"strings"
@@ -66,14 +65,13 @@ func (w *Worker) AddTask(task Task) {
 }
 
 func (w *Worker) Execute(task Task) error {
-	ctx := context.Background()
 	slog.Debug("worker calculating accrual...", slog.String("order", task.Order.Order))
 
-	if err := w.Storage.OrderRegUpdateStatus(ctx, storagedefault.StatusProcessing, task.Order.Order); err != nil {
+	if err := w.Storage.OrderRegUpdateStatus(storagedefault.StatusProcessing, task.Order.Order); err != nil {
 		return err
 	}
 
-	rewards, err := w.Storage.RewardReadAll(ctx)
+	rewards, err := w.Storage.RewardReadAll()
 	if err != nil {
 		return err
 	}
@@ -83,7 +81,13 @@ func (w *Worker) Execute(task Task) error {
 		for _, reward := range rewards {
 			var found bool
 			if strings.Contains(good.Description, reward.Match) {
-				accrual += w.Calculate(good.Price, reward.Reward, reward.RewardType)
+				slog.Debug("match one",
+					slog.String("description", good.Description),
+					slog.Float64("price", good.Price),
+					slog.Float64("reward", reward.Reward),
+					slog.String("type", string(reward.RewardType)),
+				)
+				accrual += calculateReward(good.Price, reward.Reward, reward.RewardType)
 				found = true
 			}
 			// Если найдено 1 совпадение, то не продолжаем поиск
@@ -99,15 +103,15 @@ func (w *Worker) Execute(task Task) error {
 		Accrual: accrual,
 	}
 
-	if err := w.Storage.OrderRegUpdateOne(ctx, order); err != nil {
+	if err := w.Storage.OrderRegUpdateOne(order); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (w *Worker) Calculate(price, reward float64, reward_type storageaccrual.RewardType) float64 {
-	switch reward_type {
+func calculateReward(price, reward float64, rewardType storageaccrual.RewardType) float64 {
+	switch rewardType {
 	case storageaccrual.RewardTypePercent:
 		return (price / 100) * reward
 	case storageaccrual.RewardTypePt:

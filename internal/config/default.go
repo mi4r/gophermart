@@ -3,11 +3,6 @@ package config
 import "strings"
 
 const (
-	migrDirNameGophermart string = "gophermart"
-	migrDirNameAccrual    string = "accrual"
-)
-
-const (
 	DriverPostgres = "postgres"
 )
 

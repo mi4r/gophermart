@@ -5,8 +5,8 @@ dotenv:
   - .env # Должен быть файл .env Где указаны нужные переменные окружения
 
 vars:
-  migrdirG: internal/storage/gophermart/migrations
-  migrdirA: internal/storage/accrual/migrations
+  migrVar: internal/storage/default/migrations
+
 tasks:
   statictest:
     cmds:
@@ -16,28 +16,17 @@ tasks:
       - go vet -vettool=./statictest.exe ./...
   mg-up:
     cmds:
-      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
   mg-up-1:
     cmds:
-      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up 1
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up 1
   mg-down-1:
     cmds:
-      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable down 1
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable down 1
   mg-drop:
     cmds:
-      - migrate -path {{.migrdirG}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
-  ma-up:
-    cmds:
-      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable up
-  ma-up-1:
-    cmds:
-      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable up 1
-  ma-down-1:
-    cmds:
-      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable down 1
-  ma-drop:
-    cmds:
-      - migrate -path {{.migrdirA}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME_ACC?sslmode=disable drop
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
+
   # OTHER
   build:
     cmds:

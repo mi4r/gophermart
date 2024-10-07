@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	GzipHeader = "gzip"
+	gzipHeader = "gzip"
 )
 
 type gzipResponseWriter struct {
@@ -44,12 +44,12 @@ func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Check headers
 		acceptEncoding := c.Request().Header.Get(echo.HeaderAcceptEncoding)
-		if !strings.Contains(acceptEncoding, GzipHeader) {
+		if !strings.Contains(acceptEncoding, gzipHeader) {
 			return next(c)
 		}
 
 		contentEncoding := c.Request().Header.Get(echo.HeaderContentEncoding)
-		if strings.Contains(contentEncoding, GzipHeader) {
+		if strings.Contains(contentEncoding, gzipHeader) {
 			// Create a gzip reader for the request body
 			gzipReader, err := gzip.NewReader(c.Request().Body)
 			if err != nil {
@@ -61,7 +61,7 @@ func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			c.Request().Body = io.NopCloser(gzipReader)
 		}
 
-		c.Response().Header().Set(echo.HeaderContentEncoding, GzipHeader)
+		c.Response().Header().Set(echo.HeaderContentEncoding, gzipHeader)
 		// Create gzip writer
 		gzipWriter := gzip.NewWriter(c.Response().Writer)
 		defer gzipWriter.Close()
