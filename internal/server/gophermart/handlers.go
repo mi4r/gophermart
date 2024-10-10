@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	successUserLogin   = "user has been successfully registered and authenticated"
-	orderAlreadyUpload = "order number already uploaded by this user"
-	orderAccepted      = "order number accepted for processing"
+	successUserLogin   string = "user has been successfully registered and authenticated"
+	orderAlreadyUpload string = "order number already uploaded by this user"
+	orderAccepted      string = "order number accepted for processing"
+	withdrawCompleted  string = "withdraw balance completed"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 	errUnauthorized         = errors.New("user is not authenticated")
 	errInvalidOrderID       = errors.New("invalid order number format")
 	errOrderUploadByAnother = errors.New("order number already uploaded by another user")
+	errInsufficientFunds    = errors.New("insufficient funds")
 )
 
 // Ping
@@ -226,7 +228,7 @@ func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 // @Failure 401 {string} string "Пользователь не авторизован"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
 // @Router /api/user/balance [get]
-func (s *Gophermart) userGetBalance(c echo.Context) error {
+func (s *Gophermart) userGetBalanceHandler(c echo.Context) error {
 	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
 	if !ok {
 		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
@@ -238,4 +240,82 @@ func (s *Gophermart) userGetBalance(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, user.GetBalance())
+}
+
+// Balance withdraw
+// @Summary
+// @Description Хендлер доступен только авторизованному пользователю.
+// @Description Номер заказа представляет собой гипотетический номер
+// @Description нового заказа пользователя, в счёт оплаты которого списываются баллы.
+// @Tags Заказы
+// @Accept  json
+// @Produce text/plain
+// @Success 200 {string} string "Успешная обработка запроса"
+// @Failure 401 {string} string "Пользователь не авторизован"
+// @Failure 402 {string} string "На счету недостаточно средств"
+// @Failure 422 {string} string "Неверный номер заказа"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/user/balance/withdraw [post]
+func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
+	if !ok {
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+	var req struct {
+		Order string  `json:"order"`
+		Sum   float64 `json:"sum"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.String(http.StatusBadRequest, "Invalid request format")
+	}
+	if !helper.IsLuhn(req.Order) {
+		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
+	}
+
+	user, err := s.storage.UserReadOne(login)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	curBalance := user.GetBalance().Current
+	if curBalance < req.Sum {
+		return c.String(http.StatusPaymentRequired, errInsufficientFunds.Error())
+	}
+
+	err = s.storage.WithdrawBalance(login, req.Order, req.Sum, curBalance)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.String(http.StatusOK, withdrawCompleted)
+}
+
+// Get balance withdrawals
+// @Summary
+// @Description Хендлер доступен только авторизованному пользователю.
+// @Description Факты выводов в выдаче должны быть отсортированы по времени вывода от самых старых к самым новым.
+// @Description Формат даты — RFC3339.
+// @Tags Заказы
+// @Produce json
+// @Success 200 {string} string "Успешная обработка запроса"
+// @Failure 204 {string} string "Нет ни одного списания"
+// @Failure 401 {string} string "Пользователь не авторизован"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/user/withdrawals [get]
+func (s *Gophermart) getBalanceWithdrawalsHandler(c echo.Context) error {
+	login, ok := auth.ValidateUserCookie(c, s.Config.SecretKey)
+	if !ok {
+		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
+	}
+
+	withdrawals, err := s.storage.GetUserWithdrawals(login)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(withdrawals) == 0 {
+		return c.NoContent(http.StatusNoContent)
+	}
+
+	return c.JSON(http.StatusOK, withdrawals)
 }

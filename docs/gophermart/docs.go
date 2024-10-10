@@ -200,6 +200,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/user/balance/withdraw": {
+            "post": {
+                "description": "Хендлер доступен только авторизованному пользователю.\nНомер заказа представляет собой гипотетический номер\nнового заказа пользователя, в счёт оплаты которого списываются баллы.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Заказы"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "402": {
+                        "description": "На счету недостаточно средств",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "422": {
+                        "description": "Неверный номер заказа",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/user/login": {
             "post": {
                 "description": "Для передачи аутентификационных данных используется механизм cookies",
@@ -400,6 +446,43 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Логин уже занят",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user/withdrawals": {
+            "get": {
+                "description": "Хендлер доступен только авторизованному пользователю.\nФакты выводов в выдаче должны быть отсортированы по времени вывода от самых старых к самым новым.\nФормат даты — RFC3339.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заказы"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "204": {
+                        "description": "Нет ни одного списания",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
                         "schema": {
                             "type": "string"
                         }
