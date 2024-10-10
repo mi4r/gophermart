@@ -22,6 +22,9 @@ type StorageGophermart interface {
 	UserOrderCreate(login, number string) error
 	UserOrderReadOne(number string) (storagemart.Order, error)
 	UserOrdersReadByLogin(login string) ([]storagemart.Order, error)
+
+	WithdrawBalance(login, order string, sum, curBalance float64) error
+	GetUserWithdrawals(login string) ([]storagemart.Order, error)
 }
 
 func NewStorageGophermart(driverType, path string) StorageGophermart {

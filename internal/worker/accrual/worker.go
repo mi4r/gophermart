@@ -19,21 +19,16 @@ type Worker struct {
 }
 
 // NewWorker создает новый экземпляр воркера
-func NewWorker(id int, taskCh chan Task, storage storage.StorageAccrualSystem) *Worker {
+func NewWorker(id int, taskCh chan Task) *Worker {
 	return &Worker{
-		ID:      id,
-		TaskCh:  taskCh,
-		QuitCh:  make(chan struct{}),
-		Storage: storage,
+		ID:     id,
+		TaskCh: taskCh,
+		QuitCh: make(chan struct{}),
 	}
 }
 
 // Start запускает воркера
 func (w *Worker) Start() {
-	if err := w.Storage.Open(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(0)
-	}
 	go func() {
 		for {
 			select {
@@ -60,6 +55,14 @@ func (w *Worker) Stop() {
 	}()
 }
 
+func (w *Worker) SetStorage(storage storage.StorageAccrualSystem) {
+	w.Storage = storage
+	if err := w.Storage.Open(); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}
+
 func (w *Worker) AddTask(task Task) {
 	w.TaskCh <- task
 }
@@ -75,6 +78,7 @@ func (w *Worker) Execute(task Task) error {
 	if err != nil {
 		return err
 	}
+	slog.Debug("rewards", slog.Any("rewards", rewards))
 
 	var accrual float64
 	for _, good := range task.Order.Goods {
