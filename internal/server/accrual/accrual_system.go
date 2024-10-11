@@ -20,14 +20,12 @@ func NewAccrualSystem(server *server.Server, taskCh chan workeraccrual.Task) *Ac
 	return &AccrualSystem{
 		taskCh: taskCh,
 		Server: server,
-		// 10 requests in 1 second
-		rateLimiter: rate.NewLimiter(rate.Limit(10), 1),
+		// 5 requests in 1 second
+		rateLimiter: rate.NewLimiter(rate.Limit(server.Config.RateLimit), 1),
 	}
 }
 
 func (s *AccrualSystem) SetRoutes() {
-	s.Router.GET("/ping", s.pingHandler)
-	// TODO
 	gAPI := s.Router.Group("/api")
 	gAPI.GET("/orders/:number", s.ordersGetHandler, server.RateLimiterMiddleware(s.rateLimiter))
 	gAPI.POST("/orders", s.ordersPostHandler)

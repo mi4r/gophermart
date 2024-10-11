@@ -10,6 +10,7 @@ type AccrualConfig struct {
 	DriverType  string
 	LogLevel    string
 	StoragePath string
+	RateLimit   int
 }
 
 func NewAccrualConfig() AccrualConfig {
@@ -38,6 +39,9 @@ func loadAccSysConfigFromFlags() AccrualConfig {
 
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
+
+	// 5 запросов в секунду
+	c.RateLimit = 5
 
 	return c
 }

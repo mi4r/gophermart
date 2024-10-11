@@ -160,6 +160,9 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
 
+	// По идее тут отправляем в Accrual System
+	//
+
 	var emptyOrder storagemart.Order
 	storedOrder, err := s.storage.UserOrderReadOne(orderNumber)
 	if err != nil && err != pgx.ErrNoRows {

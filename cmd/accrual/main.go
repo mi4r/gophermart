@@ -29,6 +29,7 @@ func main() {
 		server.Config{
 			ServiceName: server.AccrualName,
 			Listen:      config.ListenAddr,
+			RateLimit:   config.RateLimit,
 		},
 	)
 	// Канал для передачи задач
