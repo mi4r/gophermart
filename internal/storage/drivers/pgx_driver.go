@@ -256,7 +256,7 @@ func (d *pgxDriver) OrderRegReadOne(ctx context.Context, number string) (storage
 	if err := d.queryRow(ctx, `
 	SELECT order_number, status, accrual
 	FROM orders
-		WHERE number = $1
+		WHERE order_number = $1
 		LIMIT 1
 	`, number).Scan(
 		&o.Number, &o.Status, &o.Accrual,

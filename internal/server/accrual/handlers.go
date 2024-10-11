@@ -140,11 +140,11 @@ func (s *AccrualSystem) ordersGetHandler(c echo.Context) error {
 
 	order, err := s.storage.OrderRegReadOne(context.Background(), number)
 	if err != nil {
-		if errors.Is(err, errNotFoundOrder) {
+		if err.Error() == errNotFoundOrder.Error() {
 			return c.NoContent(http.StatusNoContent)
 		}
 		// Если ошибка не является "не найдено", возвращаем 500 статус
-		return c.String(http.StatusInternalServerError, errInternalServerError.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, order)

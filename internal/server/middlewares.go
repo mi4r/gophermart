@@ -2,9 +2,11 @@ package server
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/time/rate"
@@ -79,7 +81,11 @@ func RateLimiterMiddleware(limiter *rate.Limiter) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if !limiter.Allow() {
-				return c.String(http.StatusTooManyRequests, "No more than N requests per minute allowed")
+				limit := limiter.Limit()
+				burst := limiter.Burst()
+				retryAfter := time.Duration(float64(burst) / float64(limit)).Seconds()
+				c.Response().Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter))
+				return c.String(http.StatusTooManyRequests, fmt.Sprintf("No more than %.0f requests per minute allowed", float64(limit)))
 			}
 			return next(c)
 		}
