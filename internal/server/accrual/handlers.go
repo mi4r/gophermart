@@ -146,8 +146,9 @@ func (s *AccrualSystem) ordersGetHandler(c echo.Context) error {
 		return c.String(http.StatusNoContent, errInvalidOrderID.Error())
 	}
 
-	// TODO 429 status
-	// ...
+	// 429 status
+	// Реализовано в middleware
+
 	// ctx, cancel := context.WithCancel(context.TODO())
 	order, err := s.storage.OrderRegReadOne(number)
 	if err != nil {

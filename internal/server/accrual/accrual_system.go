@@ -20,8 +20,8 @@ func NewAccrualSystem(server *server.Server, taskCh chan workeraccrual.Task) *Ac
 	return &AccrualSystem{
 		taskCh: taskCh,
 		Server: server,
-		// 5 requests in 1 second
-		rateLimiter: rate.NewLimiter(rate.Limit(server.Config.RateLimit), 1),
+		// 5 requests in 1 minute
+		rateLimiter: rate.NewLimiter(rate.Limit(server.Config.RateLimit), 60),
 	}
 }
 

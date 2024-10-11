@@ -92,8 +92,8 @@ func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 func RateLimiterMiddleware(limiter *rate.Limiter) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if limiter.Allow() == false {
-				return c.String(http.StatusTooManyRequests, "Too Many Requests")
+			if !limiter.Allow() {
+				return c.String(http.StatusTooManyRequests, "No more than N requests per minute allowed")
 			}
 			return next(c)
 		}

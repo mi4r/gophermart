@@ -40,7 +40,7 @@ func loadAccSysConfigFromFlags() AccrualConfig {
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
 
-	// 5 запросов в секунду
+	// 5 запросов в минуту
 	c.RateLimit = 5
 
 	return c
