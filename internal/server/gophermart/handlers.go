@@ -1,6 +1,7 @@
 package servermart
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log/slog"
@@ -74,7 +75,7 @@ func (s *Gophermart) userRegisterHandler(c echo.Context) error {
 	}
 
 	// Ожидаются еще ответы 409 - Логин уже занят
-	if err := s.storage.UserCreate(user); err != nil {
+	if err := s.storage.UserCreate(context.Background(), user); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return c.String(http.StatusConflict, errLoginIsExists.Error())
@@ -108,7 +109,7 @@ func (s *Gophermart) userLoginHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, errEmptyLoginOrPassword.Error())
 	}
 
-	user, err := s.storage.UserReadOne(creds.Login)
+	user, err := s.storage.UserReadOne(context.Background(), creds.Login)
 	if err == pgx.ErrNoRows {
 		return c.String(http.StatusUnauthorized, pgx.ErrNoRows.Error())
 	} else if err != nil {
@@ -164,7 +165,7 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 	//
 
 	var emptyOrder storagemart.Order
-	storedOrder, err := s.storage.UserOrderReadOne(orderNumber)
+	storedOrder, err := s.storage.UserOrderReadOne(context.Background(), orderNumber)
 	if err != nil && err != pgx.ErrNoRows {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -181,7 +182,7 @@ func (s *Gophermart) userPostOrdersHandler(c echo.Context) error {
 		}
 	}
 
-	err = s.storage.UserOrderCreate(login, orderNumber)
+	err = s.storage.UserOrderCreate(context.Background(), login, orderNumber)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -208,7 +209,7 @@ func (s *Gophermart) userGetOrdersHandler(c echo.Context) error {
 		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	orders, err := s.storage.UserOrdersReadByLogin(login)
+	orders, err := s.storage.UserOrdersReadByLogin(context.Background(), login)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -237,7 +238,7 @@ func (s *Gophermart) userGetBalanceHandler(c echo.Context) error {
 		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	user, err := s.storage.UserReadOne(login)
+	user, err := s.storage.UserReadOne(context.Background(), login)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -276,7 +277,7 @@ func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
 		return c.String(http.StatusUnprocessableEntity, errInvalidOrderID.Error())
 	}
 
-	user, err := s.storage.UserReadOne(login)
+	user, err := s.storage.UserReadOne(context.Background(), login)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -285,7 +286,7 @@ func (s *Gophermart) userBalanceWithdrawHandler(c echo.Context) error {
 		return c.String(http.StatusPaymentRequired, errInsufficientFunds.Error())
 	}
 
-	err = s.storage.WithdrawBalance(login, req.Order, req.Sum, curBalance)
+	err = s.storage.WithdrawBalance(context.Background(), login, req.Order, req.Sum, curBalance)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
@@ -311,7 +312,7 @@ func (s *Gophermart) getBalanceWithdrawalsHandler(c echo.Context) error {
 		return c.String(http.StatusUnauthorized, errUnauthorized.Error())
 	}
 
-	withdrawals, err := s.storage.GetUserWithdrawals(login)
+	withdrawals, err := s.storage.GetUserWithdrawals(context.Background(), login)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}

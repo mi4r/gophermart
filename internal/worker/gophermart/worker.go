@@ -1,6 +1,7 @@
 package workermart
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -53,7 +54,8 @@ func (w *Worker) Stop() {
 
 func (w *Worker) SetStorage(storage storage.StorageGophermart) {
 	w.Storage = storage
-	if err := w.Storage.Open(); err != nil {
+	ctx := context.Background()
+	if err := w.Storage.Open(ctx); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}

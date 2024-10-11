@@ -1,6 +1,7 @@
 package workeraccrual
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"strings"
@@ -57,7 +58,8 @@ func (w *Worker) Stop() {
 
 func (w *Worker) SetStorage(storage storage.StorageAccrualSystem) {
 	w.Storage = storage
-	if err := w.Storage.Open(); err != nil {
+	ctx := context.Background()
+	if err := w.Storage.Open(ctx); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
@@ -69,12 +71,12 @@ func (w *Worker) AddTask(task Task) {
 
 func (w *Worker) Execute(task Task) error {
 	slog.Debug("worker calculating accrual...", slog.String("order", task.Order.Order))
-
-	if err := w.Storage.OrderRegUpdateStatus(storagedefault.StatusProcessing, task.Order.Order); err != nil {
+	ctx := context.Background()
+	if err := w.Storage.OrderRegUpdateStatus(ctx, storagedefault.StatusProcessing, task.Order.Order); err != nil {
 		return err
 	}
 
-	rewards, err := w.Storage.RewardReadAll()
+	rewards, err := w.Storage.RewardReadAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -107,7 +109,7 @@ func (w *Worker) Execute(task Task) error {
 		Accrual: accrual,
 	}
 
-	if err := w.Storage.OrderRegUpdateOne(order); err != nil {
+	if err := w.Storage.OrderRegUpdateOne(ctx, order); err != nil {
 		return err
 	}
 

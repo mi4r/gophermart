@@ -1,6 +1,7 @@
 package servermart
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/mi4r/gophermart/internal/server"
@@ -20,7 +21,8 @@ func NewGophermart(server *server.Server) *Gophermart {
 
 func (s *Gophermart) SetStorage(storage storage.StorageGophermart) {
 	s.storage = storage
-	if err := s.storage.Open(); err != nil {
+	ctx := context.Background()
+	if err := s.storage.Open(ctx); err != nil {
 		slog.Error(err.Error())
 		s.Shutdown()
 	}
