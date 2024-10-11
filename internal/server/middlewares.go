@@ -27,20 +27,6 @@ func (grw *gzipResponseWriter) Write(b []byte) (int, error) {
 	return grw.Writer.Write(b)
 }
 
-// func (s *Server) AuthWithCookieMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-
-// 		return nil
-// 	}
-// }
-
-// func (s *Server) SetContentTypeJSONMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-// 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 		return nil
-// 	}
-// }
-
 func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Check headers
