@@ -1,6 +1,7 @@
 package workeraccrual
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"strings"
@@ -19,21 +20,16 @@ type Worker struct {
 }
 
 // NewWorker создает новый экземпляр воркера
-func NewWorker(id int, taskCh chan Task, storage storage.StorageAccrualSystem) *Worker {
+func NewWorker(id int, taskCh chan Task) *Worker {
 	return &Worker{
-		ID:      id,
-		TaskCh:  taskCh,
-		QuitCh:  make(chan struct{}),
-		Storage: storage,
+		ID:     id,
+		TaskCh: taskCh,
+		QuitCh: make(chan struct{}),
 	}
 }
 
 // Start запускает воркера
 func (w *Worker) Start() {
-	if err := w.Storage.Open(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(0)
-	}
 	go func() {
 		for {
 			select {
@@ -60,21 +56,31 @@ func (w *Worker) Stop() {
 	}()
 }
 
+func (w *Worker) SetStorage(storage storage.StorageAccrualSystem) {
+	w.Storage = storage
+	ctx := context.Background()
+	if err := w.Storage.Open(ctx); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}
+
 func (w *Worker) AddTask(task Task) {
 	w.TaskCh <- task
 }
 
 func (w *Worker) Execute(task Task) error {
 	slog.Debug("worker calculating accrual...", slog.String("order", task.Order.Order))
-
-	if err := w.Storage.OrderRegUpdateStatus(storagedefault.StatusProcessing, task.Order.Order); err != nil {
+	ctx := context.Background()
+	if err := w.Storage.OrderRegUpdateStatus(ctx, storagedefault.StatusProcessing, task.Order.Order); err != nil {
 		return err
 	}
 
-	rewards, err := w.Storage.RewardReadAll()
+	rewards, err := w.Storage.RewardReadAll(ctx)
 	if err != nil {
 		return err
 	}
+	slog.Debug("rewards", slog.Any("rewards", rewards))
 
 	var accrual float64
 	for _, good := range task.Order.Goods {
@@ -103,7 +109,7 @@ func (w *Worker) Execute(task Task) error {
 		Accrual: accrual,
 	}
 
-	if err := w.Storage.OrderRegUpdateOne(order); err != nil {
+	if err := w.Storage.OrderRegUpdateOne(ctx, order); err != nil {
 		return err
 	}
 

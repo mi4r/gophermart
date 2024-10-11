@@ -2,9 +2,12 @@ package drivers
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -19,6 +22,10 @@ import (
 
 const (
 	migrDefaultPath = "default"
+)
+
+var (
+	errNotFoundOrder = errors.New("order not found")
 )
 
 type pgxDriver struct {
@@ -48,8 +55,8 @@ func NewPgxDriver(path string) *pgxDriver {
 	}
 }
 
-func (d *pgxDriver) Open() error {
-	pool, err := pgxpool.New(context.Background(), d.dbURL)
+func (d *pgxDriver) Open(ctx context.Context) error {
+	pool, err := pgxpool.New(ctx, d.dbURL)
 	if err != nil {
 		return err
 	}
@@ -98,8 +105,8 @@ func (d *pgxDriver) Close() {
 	d.connPool.Close()
 }
 
-func (d *pgxDriver) UserCreate(user storagemart.User) error {
-	_, err := d.exec(context.Background(), `
+func (d *pgxDriver) UserCreate(ctx context.Context, user storagemart.User) error {
+	_, err := d.exec(ctx, `
 	INSERT INTO users (login, password)
 	VALUES ($1, $2)
 	`, user.Login, user.Password,
@@ -110,8 +117,7 @@ func (d *pgxDriver) UserCreate(user storagemart.User) error {
 	return nil
 }
 
-func (d *pgxDriver) UserReadOne(login string) (storagemart.User, error) {
-	ctx := context.Background()
+func (d *pgxDriver) UserReadOne(ctx context.Context, login string) (storagemart.User, error) {
 	var user storagemart.User
 	if err := d.queryRow(ctx, `
 		SELECT login, password, current, withdrawn FROM users WHERE login=$1
@@ -121,8 +127,8 @@ func (d *pgxDriver) UserReadOne(login string) (storagemart.User, error) {
 	return user, nil
 }
 
-func (d *pgxDriver) UserOrderCreate(login, number string) error {
-	_, err := d.exec(context.Background(), `
+func (d *pgxDriver) UserOrderCreate(ctx context.Context, login, number string) error {
+	_, err := d.exec(ctx, `
 	INSERT INTO user_orders (number, user_login)
 	VALUES ($1, $2)
 	`, number, login,
@@ -133,8 +139,7 @@ func (d *pgxDriver) UserOrderCreate(login, number string) error {
 	return nil
 }
 
-func (d *pgxDriver) UserOrderReadOne(number string) (storagemart.Order, error) {
-	ctx := context.Background()
+func (d *pgxDriver) UserOrderReadOne(ctx context.Context, number string) (storagemart.Order, error) {
 	var o storagemart.Order
 	if err := d.queryRow(ctx, `
 	SELECT number, status, accrual, uploaded_at, user_login
@@ -150,9 +155,8 @@ func (d *pgxDriver) UserOrderReadOne(number string) (storagemart.Order, error) {
 	return o, nil
 }
 
-func (d *pgxDriver) UserOrdersReadByLogin(login string) ([]storagemart.Order, error) {
+func (d *pgxDriver) UserOrdersReadByLogin(ctx context.Context, login string) ([]storagemart.Order, error) {
 	var orders []storagemart.Order
-	ctx := context.Background()
 	rows, err := d.queryRows(ctx, `
 	SELECT number, status, accrual, uploaded_at, user_login
 	FROM user_orders
@@ -179,7 +183,7 @@ func (d *pgxDriver) UserOrdersReadByLogin(login string) ([]storagemart.Order, er
 	return orders, nil
 }
 
-func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
+func (d *pgxDriver) RewardCreate(ctx context.Context, r storageaccrual.Reward) error {
 	_, err := d.exec(context.Background(), `
 	INSERT INTO rewards (match, reward, reward_type)
 	VALUES ($1, $2, $3)
@@ -191,10 +195,9 @@ func (d *pgxDriver) RewardCreate(r storageaccrual.Reward) error {
 	return nil
 }
 
-func (d *pgxDriver) RewardReadAll() ([]storageaccrual.Reward, error) {
-	ctx := context.Background()
+func (d *pgxDriver) RewardReadAll(ctx context.Context) ([]storageaccrual.Reward, error) {
 	var rewards []storageaccrual.Reward
-	rows, err := d.queryRows(ctx, `SELECT match, reward, reward_type FROM rewards`)
+	rows, err := d.queryRows(ctx, "SELECT match, reward, reward_type FROM rewards")
 	if err != nil {
 		return rewards, err
 	}
@@ -207,12 +210,12 @@ func (d *pgxDriver) RewardReadAll() ([]storageaccrual.Reward, error) {
 			slog.Error("scan error", slog.String("err", err.Error()))
 			return rewards, err
 		}
+		rewards = append(rewards, r)
 	}
 	return rewards, nil
 }
 
-func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
-	ctx := context.Background()
+func (d *pgxDriver) OrderRegCreate(ctx context.Context, o storageaccrual.Order) error {
 	tx, err := d.connPool.Begin(ctx)
 	if err != nil {
 		return err
@@ -245,27 +248,28 @@ func (d *pgxDriver) OrderRegCreate(o storageaccrual.Order) error {
 		}
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
-func (d *pgxDriver) OrderRegReadOne(number string) (storagedefault.Order, error) {
-	ctx := context.Background()
+func (d *pgxDriver) OrderRegReadOne(ctx context.Context, number string) (storagedefault.Order, error) {
 	var o storagedefault.Order
 	if err := d.queryRow(ctx, `
 	SELECT order_number, status, accrual
 	FROM orders
-		WHERE number = $1
+		WHERE order_number = $1
 		LIMIT 1
 	`, number).Scan(
 		&o.Number, &o.Status, &o.Accrual,
 	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return o, errNotFoundOrder
+		}
 		return o, err
 	}
 	return o, nil
 }
 
-func (d *pgxDriver) OrderRegUpdateStatus(status storagedefault.OrderStatus, number string) error {
-	ctx := context.Background()
+func (d *pgxDriver) OrderRegUpdateStatus(ctx context.Context, status storagedefault.OrderStatus, number string) error {
 	if _, err := d.exec(ctx, `
 	UPDATE orders SET status=$1 WHERE order_number=$2
 	`, status, number); err != nil {
@@ -274,12 +278,57 @@ func (d *pgxDriver) OrderRegUpdateStatus(status storagedefault.OrderStatus, numb
 	return nil
 }
 
-func (d *pgxDriver) OrderRegUpdateOne(order storagedefault.Order) error {
-	ctx := context.Background()
+func (d *pgxDriver) OrderRegUpdateOne(ctx context.Context, order storagedefault.Order) error {
 	if _, err := d.exec(ctx, `
 	UPDATE orders SET status=$1, accrual=$2 WHERE order_number=$3
 	`, order.Status, order.Accrual, order.Number); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (d *pgxDriver) WithdrawBalance(ctx context.Context, login, order string, sum, curBalance float64) error {
+	tx, err := d.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	queryUpdate := `UPDATE users SET current = current - $1, withdrawn = withdrawn + $1 WHERE login = $2;`
+	_, err = tx.Exec(ctx, queryUpdate, sum, login)
+	if err != nil {
+		return err
+	}
+
+	queryInsertOrder := `INSERT INTO orders (number, user_login, sum, is_withdrawn, processed_at) VALUES ($1, $2, $3, $4, $5);`
+	_, err = tx.Exec(ctx, queryInsertOrder, order, login, sum, true, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (d *pgxDriver) GetUserWithdrawals(ctx context.Context, login string) ([]storagemart.Order, error) {
+	query := `SELECT number, sum, processed_at
+			FROM orders
+			WHERE user_login = $1 AND is_withdrawn = $2
+			ORDER BY processed_at ASC`
+
+	rows, err := d.queryRows(ctx, query, login, true)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var withdrawals []storagemart.Order
+	for rows.Next() {
+		var w storagemart.Order
+		if err := rows.Scan(&w.Number, &w.Sum, &w.ProcessedAt); err != nil {
+			return nil, err
+		}
+		withdrawals = append(withdrawals, w)
+	}
+
+	return withdrawals, nil
 }

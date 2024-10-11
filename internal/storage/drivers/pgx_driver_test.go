@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -59,7 +60,8 @@ func TestMain(m *testing.M) {
 	if err = pool.Retry(func() error {
 		storage = NewPgxDriver(databaseURL)
 		storage.isTest = true
-		if err := storage.Open(); err != nil {
+		ctx := context.Background()
+		if err := storage.Open(ctx); err != nil {
 			return err
 		}
 		return storage.Ping()
@@ -142,7 +144,8 @@ func TestUsersCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := storage.UserCreate(tt.user); err != nil {
+			ctx := context.Background()
+			if err := storage.UserCreate(ctx, tt.user); err != nil {
 				if tt.wantErr {
 					t.Log(err)
 				} else {
@@ -171,7 +174,8 @@ func TestUsersReadOne(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			user, err := storage.UserReadOne(tt.login)
+			ctx := context.Background()
+			user, err := storage.UserReadOne(ctx, tt.login)
 			if err != nil {
 				t.Error(err)
 			}
@@ -235,7 +239,8 @@ func TestOrdersCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := storage.UserOrderCreate(tt.login, tt.number); err != nil {
+			ctx := context.Background()
+			if err := storage.UserOrderCreate(ctx, tt.login, tt.number); err != nil {
 				if tt.wantErr {
 					t.Skipf("want err. number %s already exists. err: %s", tt.number, err.Error())
 				} else {
@@ -264,7 +269,8 @@ func TestOrderReadOne(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			user, err := storage.UserOrderReadOne(tt.number)
+			ctx := context.Background()
+			user, err := storage.UserOrderReadOne(ctx, tt.number)
 			if err != nil {
 				t.Error(err)
 			}
@@ -296,7 +302,8 @@ func TestOrderReadAllByUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			orders, err := storage.UserOrdersReadByLogin(tt.userLogin)
+			ctx := context.Background()
+			orders, err := storage.UserOrdersReadByLogin(ctx, tt.userLogin)
 			if err != nil {
 				t.Error(err)
 			}

@@ -29,16 +29,19 @@ func main() {
 		server.Config{
 			ServiceName: server.AccrualName,
 			Listen:      config.ListenAddr,
+			RateLimit:   config.RateLimit,
 		},
 	)
 	// Канал для передачи задач
 	taskCh := make(chan workeraccrual.Task)
-	worker := workeraccrual.NewWorker(1, taskCh, storage)
+	worker := workeraccrual.NewWorker(1, taskCh)
+
 	service := serveraccrual.NewAccrualSystem(core, taskCh)
 
 	// Configure
 	service.SetRoutes()
 	service.SetStorage(storage)
+	worker.SetStorage(storage)
 	go service.Server.Start()
 	worker.Start()
 	// Канал для перехвата сигналов

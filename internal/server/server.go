@@ -20,6 +20,7 @@ type Config struct {
 	Listen      string
 	SecretKey   string
 	MigrDirName string
+	RateLimit   int
 }
 
 type Server struct {

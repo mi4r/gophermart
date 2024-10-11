@@ -46,3 +46,26 @@ migrate -path internal/storage/migrations -database postgres://user:password@loc
 ```
 migrate create -ext sql -dir internal/storage/migrations -seq change_value_type_in_balances
 ```
+
+## Запуск сервисов (docker-compose)
+```
+docker-compose up
+```
+
+## Запуск сервисов (local)
+Установка taskfile утилиты
+```
+go install github.com/go-task/task/v3/cmd/task@latest
+```
+Конфигурирование
+```
+vim .env
+```
+Запуск Gophermart
+```
+task run
+```
+Запуск Accrual System
+```
+task run-accrual
+```

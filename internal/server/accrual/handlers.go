@@ -1,6 +1,7 @@
 package serveraccrual
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -27,20 +28,8 @@ var (
 	errNotFoundOrder             = errors.New("order not found")
 	errInvalidOrderID            = errors.New("invalid order number format")
 	errOrderAlreadyExists        = errors.New("order already exists")
+	errInternalServerError       = errors.New("internal server error")
 )
-
-// Ping
-// @Description Простая проверка состояния сервера
-// @Tags Разное
-// @Success 200 {string} pong
-// @Router /ping [get]
-func (s *AccrualSystem) pingHandler(c echo.Context) error {
-	storageOK := "pong"
-	if err := s.storage.Ping(); err != nil {
-		storageOK = err.Error()
-	}
-	return c.JSON(http.StatusOK, storageOK)
-}
 
 // Reward created
 // @Summary Регистрация информации о вознаграждении за товар
@@ -72,7 +61,7 @@ func (s *AccrualSystem) rewardPostHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errRewardIsInvalidType.Error())
 	}
 
-	if err := s.storage.RewardCreate(reward); err != nil {
+	if err := s.storage.RewardCreate(context.Background(), reward); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return c.String(http.StatusConflict, errMatchKeyAlreadyExists.Error())
@@ -107,7 +96,7 @@ func (s *AccrualSystem) ordersPostHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, errInvalidOrderID.Error())
 	}
 
-	if err := s.storage.OrderRegCreate(order); err != nil {
+	if err := s.storage.OrderRegCreate(context.Background(), order); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			slog.Debug("internal error. 23505", slog.String("msg", err.Error()))
@@ -146,16 +135,16 @@ func (s *AccrualSystem) ordersGetHandler(c echo.Context) error {
 		return c.String(http.StatusNoContent, errInvalidOrderID.Error())
 	}
 
-	// TODO 429 status
-	// ...
-	// ctx, cancel := context.WithCancel(context.TODO())
-	order, err := s.storage.OrderRegReadOne(number)
-	if err != nil {
-		// TODO. Обработка ошибок, пока будет просто ненаход
-		return c.String(http.StatusNoContent, errNotFoundOrder.Error())
+	// 429 status
+	// Реализовано в middleware
 
-		// TODO. 500 status
-		// ...
+	order, err := s.storage.OrderRegReadOne(context.Background(), number)
+	if err != nil {
+		if err.Error() == errNotFoundOrder.Error() {
+			return c.NoContent(http.StatusNoContent)
+		}
+		// Если ошибка не является "не найдено", возвращаем 500 статус
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, order)

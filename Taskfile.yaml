@@ -39,6 +39,9 @@ tasks:
   run:
     cmds:
       - go run cmd/gophermart/main.go -d postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable -k "secret-key" -a localhost:8080
+  run-accrual:
+    cmds:
+      - go run cmd/accrual/main.go -d postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable -a localhost:8081
   swag:
     cmds:
       - swag init -g ./cmd/gophermart/main.go -o docs/gophermart

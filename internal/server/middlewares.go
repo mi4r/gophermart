@@ -2,11 +2,14 @@ package server
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -25,20 +28,6 @@ func (grw *gzipResponseWriter) Write(b []byte) (int, error) {
 	}
 	return grw.Writer.Write(b)
 }
-
-// func (s *Server) AuthWithCookieMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-
-// 		return nil
-// 	}
-// }
-
-// func (s *Server) SetContentTypeJSONMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-// 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 		return nil
-// 	}
-// }
 
 func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -84,5 +73,21 @@ func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		return nil
+	}
+}
+
+// RateLimiterMiddleware - middleware для ограничения скорости запросов
+func RateLimiterMiddleware(limiter *rate.Limiter) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if !limiter.Allow() {
+				limit := limiter.Limit()
+				burst := limiter.Burst()
+				retryAfter := time.Duration(float64(burst) / float64(limit)).Seconds()
+				c.Response().Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter))
+				return c.String(http.StatusTooManyRequests, fmt.Sprintf("No more than %.0f requests per minute allowed", float64(limit)))
+			}
+			return next(c)
+		}
 	}
 }
