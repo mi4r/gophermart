@@ -6,18 +6,22 @@ import (
 	"github.com/mi4r/gophermart/internal/server"
 	"github.com/mi4r/gophermart/internal/storage"
 	workeraccrual "github.com/mi4r/gophermart/internal/worker/accrual"
+	"golang.org/x/time/rate"
 )
 
 type AccrualSystem struct {
 	*server.Server
-	taskCh  chan workeraccrual.Task
-	storage storage.StorageAccrualSystem
+	taskCh      chan workeraccrual.Task
+	storage     storage.StorageAccrualSystem
+	rateLimiter *rate.Limiter
 }
 
 func NewAccrualSystem(server *server.Server, taskCh chan workeraccrual.Task) *AccrualSystem {
 	return &AccrualSystem{
 		taskCh: taskCh,
 		Server: server,
+		// 10 requests in 1 second
+		rateLimiter: rate.NewLimiter(rate.Limit(10), 1),
 	}
 }
 
@@ -25,7 +29,7 @@ func (s *AccrualSystem) SetRoutes() {
 	s.Router.GET("/ping", s.pingHandler)
 	// TODO
 	gAPI := s.Router.Group("/api")
-	gAPI.GET("/orders/:number", s.ordersGetHandler)
+	gAPI.GET("/orders/:number", s.ordersGetHandler, server.RateLimiterMiddleware(s.rateLimiter))
 	gAPI.POST("/orders", s.ordersPostHandler)
 	gAPI.POST("/goods", s.rewardPostHandler)
 }

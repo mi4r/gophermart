@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -84,5 +85,17 @@ func GzipMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		return nil
+	}
+}
+
+// RateLimiterMiddleware - middleware для ограничения скорости запросов
+func RateLimiterMiddleware(limiter *rate.Limiter) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if limiter.Allow() == false {
+				return c.String(http.StatusTooManyRequests, "Too Many Requests")
+			}
+			return next(c)
+		}
 	}
 }
