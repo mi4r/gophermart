@@ -70,10 +70,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	// if err := storage.autoMigrate(); err != nil {
-	// 	pool.Purge(resource)
-	// 	log.Fatal(err)
-	// }
+	storage.Migrate("default")
 
 	defer func() {
 		if err := pool.Purge(resource); err != nil {

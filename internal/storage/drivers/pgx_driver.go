@@ -183,6 +183,30 @@ func (d *pgxDriver) UserOrdersReadByLogin(ctx context.Context, login string) ([]
 	return orders, nil
 }
 
+func (d *pgxDriver) UserOrderReadAllNumbers(ctx context.Context) ([]string, error) {
+	var orders []string
+	rows, err := d.queryRows(ctx, `
+	SELECT number FROM user_orders
+		WHERE status != 'INVALID' AND status != 'PROCESSED'`)
+	if err != nil {
+		return orders, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var o string
+		if err := rows.Scan(
+			&o,
+		); err != nil {
+			slog.Error("scan error", slog.String("err", err.Error()))
+			return []string{}, err
+		}
+		orders = append(orders, o)
+	}
+
+	return orders, nil
+}
+
 func (d *pgxDriver) RewardCreate(ctx context.Context, r storageaccrual.Reward) error {
 	_, err := d.exec(context.Background(), `
 	INSERT INTO rewards (match, reward, reward_type)
