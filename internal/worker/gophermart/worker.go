@@ -67,6 +67,8 @@ func (w *Worker) Execute() error {
 		return nil
 	}
 
+	var orders []storagedefault.Order
+
 	for _, num := range orderNumbers {
 		err = w.Storage.UserOrderUpdateStatus(ctx, num, storagedefault.StatusProcessing)
 		if err != nil {
@@ -88,16 +90,18 @@ func (w *Worker) Execute() error {
 		if err != nil {
 			return err
 		}
-		var orders []storagedefault.Order
-		err = json.Unmarshal(respBody, &orders)
+		slog.Debug("response body from accrual", slog.String("respBody", string(respBody)))
+		var order storagedefault.Order
+		err = json.Unmarshal(respBody, &order)
 		if err != nil {
 			return err
 		}
-
-		err = w.Storage.UserOrderUpdateAll(ctx, orders)
-		if err != nil {
-			return err
-		}
+		orders = append(orders, order)
+	}
+	slog.Debug("orders", slog.Any("orders", orders))
+	err = w.Storage.UserOrderUpdateAll(ctx, orders)
+	if err != nil {
+		return err
 	}
 	return nil
 }
