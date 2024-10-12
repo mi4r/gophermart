@@ -32,7 +32,9 @@ func NewWorker(id int, tickerCh *time.Ticker, accrualAddress string) *Worker {
 
 // Start запускает воркера
 func (w *Worker) Start() {
+	slog.Debug("start timer")
 	for range w.TickerCh.C {
+		slog.Debug("start worker")
 		w.Execute()
 	}
 }
@@ -59,6 +61,8 @@ func (w *Worker) Execute() error {
 		return err
 	}
 
+	slog.Debug("fetch orders", slog.Any("orders", orderNumbers))
+
 	if len(orderNumbers) == 0 {
 		return nil
 	}
@@ -69,7 +73,8 @@ func (w *Worker) Execute() error {
 			return err
 		}
 
-		address := fmt.Sprintf("%s/%s", w.AccrualAddress, num)
+		address := fmt.Sprintf("%s/api/orders/%s", w.AccrualAddress, num)
+		slog.Debug("fetch data from accrual", slog.String("address", address))
 		resp, err := http.Get(address)
 		if err != nil {
 			return err

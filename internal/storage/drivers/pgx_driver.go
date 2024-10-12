@@ -225,7 +225,7 @@ func (d *pgxDriver) UserOrderUpdateAll(ctx context.Context, orders []storagedefa
 
 	for _, o := range orders {
 		if _, err := tx.Exec(ctx, `
-		UPDATE user_orders SET status = $1, accrual=$2 processed_at = NOW() WHERE number = $3
+		UPDATE user_orders SET status = $1, accrual=$2, processed_at = NOW() WHERE number = $3
 		`, o.Status, o.Accrual, o.Number); err != nil {
 			return err
 		}
