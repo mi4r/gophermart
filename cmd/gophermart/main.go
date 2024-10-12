@@ -34,8 +34,9 @@ func main() {
 		},
 	)
 
-	tickerCh := time.NewTicker(10)
-	worker := workermart.NewWorker(1, tickerCh)
+	tickerCh := time.NewTicker(60 * time.Second)
+	worker := workermart.NewWorker(1, tickerCh, config.AccrualSystemAddress)
+	worker.SetStorage(storage)
 	service := servermart.NewGophermart(core)
 	// Configure
 	service.SetRoutes()

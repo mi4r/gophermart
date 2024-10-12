@@ -2,34 +2,39 @@ package workermart
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/mi4r/gophermart/internal/storage"
+	storagedefault "github.com/mi4r/gophermart/internal/storage/default"
 )
 
 type Worker struct {
-	ID       int          // ID воркера
-	TickerCh *time.Ticker // Канал для получения задач
-	Storage  storage.StorageGophermart
+	ID             int          // ID воркера
+	TickerCh       *time.Ticker // Канал для получения задач
+	AccrualAddress string
+	Storage        storage.StorageGophermart
 }
 
 // NewWorker создает новый экземпляр воркера
-func NewWorker(id int, tickerCh *time.Ticker) *Worker {
+func NewWorker(id int, tickerCh *time.Ticker, accrualAddress string) *Worker {
 	return &Worker{
-		ID:       id,
-		TickerCh: tickerCh,
+		ID:             id,
+		TickerCh:       tickerCh,
+		AccrualAddress: accrualAddress,
 	}
 }
 
 // Start запускает воркера
 func (w *Worker) Start() {
-	go func() {
-		for range w.TickerCh.C {
-			w.Execute()
-		}
-	}()
+	for range w.TickerCh.C {
+		w.Execute()
+	}
 }
 
 // Stop останавливает воркера
@@ -48,5 +53,46 @@ func (w *Worker) SetStorage(storage storage.StorageGophermart) {
 }
 
 func (w *Worker) Execute() error {
+	ctx := context.Background()
+	orderNumbers, err := w.Storage.UserOrderReadAllNumbers(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(orderNumbers) == 0 {
+		return nil
+	}
+
+	for _, num := range orderNumbers {
+		err = w.Storage.UserOrderUpdateStatus(ctx, num, storagedefault.StatusProcessing)
+		if err != nil {
+			return err
+		}
+
+		address := fmt.Sprintf("%s/%s", w.AccrualAddress, num)
+		resp, err := http.Get(address)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusTooManyRequests {
+			w.TickerCh.Reset(60 * time.Second)
+			return nil
+		}
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		var orders []storagedefault.Order
+		err = json.Unmarshal(respBody, &orders)
+		if err != nil {
+			return err
+		}
+
+		err = w.Storage.UserOrderUpdateAll(ctx, orders)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
