@@ -207,6 +207,33 @@ func (d *pgxDriver) UserOrderReadAllNumbers(ctx context.Context) ([]string, erro
 	return orders, nil
 }
 
+func (d *pgxDriver) UserOrderUpdateStatus(ctx context.Context, number string, status storagedefault.OrderStatus) error {
+	if _, err := d.exec(ctx, `
+	UPDATE user_orders SET status = $1 
+		WHERE number = $2`, status, number); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *pgxDriver) UserOrderUpdateAll(ctx context.Context, orders []storagedefault.Order) error {
+	tx, err := d.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	for _, o := range orders {
+		if _, err := tx.Exec(ctx, `
+		UPDATE user_orders SET status = $1, accrual=$2 processed_at = NOW() WHERE number = $3
+		`, o.Status, o.Accrual, o.Number); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
 func (d *pgxDriver) RewardCreate(ctx context.Context, r storageaccrual.Reward) error {
 	_, err := d.exec(context.Background(), `
 	INSERT INTO rewards (match, reward, reward_type)
