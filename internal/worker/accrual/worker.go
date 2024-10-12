@@ -110,6 +110,9 @@ func (w *Worker) Execute(task Task) error {
 	}
 
 	if err := w.Storage.OrderRegUpdateOne(ctx, order); err != nil {
+		if err := w.Storage.OrderRegUpdateStatus(ctx, storagedefault.StatusInvalid, task.Order.Order); err != nil {
+			return err
+		}
 		return err
 	}
 

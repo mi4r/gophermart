@@ -32,7 +32,7 @@ CREATE TABLE goods (
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     order_number VARCHAR(255) UNIQUE NOT NULL,
-    status status_enum DEFAULT 'NEW' NOT NULL,
+    status status_enum DEFAULT 'REGISTERED' NOT NULL,
     accrual DOUBLE PRECISION
 );
 
