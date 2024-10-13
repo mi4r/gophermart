@@ -83,7 +83,15 @@ func (w *Worker) Execute() error {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusTooManyRequests {
-			w.TickerCh.Reset(60 * time.Second)
+			// Забираем значение Retry-After из заголовка
+			retryAfterHeader := resp.Header.Get("Retry-After")
+			retryAfter, err := time.ParseDuration(retryAfterHeader + "s")
+			if err != nil {
+				slog.Error("parse retry-after header error", slog.String("err", err.Error()))
+				return err
+			}
+			slog.Debug("retry after", slog.Duration("retryAfter", retryAfter))
+			time.Sleep(retryAfter)
 			return nil
 		}
 		respBody, err := io.ReadAll(resp.Body)
