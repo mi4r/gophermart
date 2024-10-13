@@ -183,6 +183,61 @@ func (d *pgxDriver) UserOrdersReadByLogin(ctx context.Context, login string) ([]
 	return orders, nil
 }
 
+func (d *pgxDriver) UserOrderReadAllNumbers(ctx context.Context) ([]string, error) {
+	var orders []string
+	rows, err := d.queryRows(ctx, `
+	SELECT number FROM user_orders
+		WHERE status != 'INVALID' AND status != 'PROCESSED'`)
+	if err != nil {
+		return orders, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var o string
+		if err := rows.Scan(
+			&o,
+		); err != nil {
+			slog.Error("scan error", slog.String("err", err.Error()))
+			return []string{}, err
+		}
+		orders = append(orders, o)
+	}
+
+	return orders, nil
+}
+
+func (d *pgxDriver) UserOrderUpdateStatus(ctx context.Context, number string, status storagedefault.OrderStatus) error {
+	if _, err := d.exec(ctx, `
+	UPDATE user_orders SET status = $1 
+		WHERE number = $2`, status, number); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *pgxDriver) UserOrderUpdateAll(ctx context.Context, orders []storagedefault.Order) error {
+	tx, err := d.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	for _, o := range orders {
+		var userLogin string
+		if err := tx.QueryRow(ctx, `
+		UPDATE user_orders SET status = $1, accrual=$2, processed_at = NOW() WHERE number = $3
+		RETURNING user_login;`, o.Status, o.Accrual, o.Number).Scan(&userLogin); err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, `UPDATE users SET current = current + $1 WHERE login = $2;`, o.Accrual, userLogin); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
 func (d *pgxDriver) RewardCreate(ctx context.Context, r storageaccrual.Reward) error {
 	_, err := d.exec(context.Background(), `
 	INSERT INTO rewards (match, reward, reward_type)
@@ -300,8 +355,8 @@ func (d *pgxDriver) WithdrawBalance(ctx context.Context, login, order string, su
 		return err
 	}
 
-	queryInsertOrder := `INSERT INTO orders (number, user_login, sum, is_withdrawn, processed_at) VALUES ($1, $2, $3, $4, $5);`
-	_, err = tx.Exec(ctx, queryInsertOrder, order, login, sum, true, time.Now())
+	queryInsertOrder := `INSERT INTO user_orders (number, user_login, sum, is_withdrawn, processed_at) VALUES ($1, $2, $3, $4, NOW());`
+	_, err = tx.Exec(ctx, queryInsertOrder, order, login, sum, true)
 	if err != nil {
 		return err
 	}
@@ -309,26 +364,30 @@ func (d *pgxDriver) WithdrawBalance(ctx context.Context, login, order string, su
 	return tx.Commit(ctx)
 }
 
-func (d *pgxDriver) GetUserWithdrawals(ctx context.Context, login string) ([]storagemart.Order, error) {
+func (d *pgxDriver) GetUserWithdrawals(ctx context.Context, login string) ([]storagedefault.WithdrownOrder, error) {
 	query := `SELECT number, sum, processed_at
-			FROM orders
-			WHERE user_login = $1 AND is_withdrawn = $2
-			ORDER BY processed_at ASC`
-
+		FROM user_orders
+		WHERE user_login = $1 AND is_withdrawn = $2
+		ORDER BY processed_at ASC
+	`
 	rows, err := d.queryRows(ctx, query, login, true)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
-	var withdrawals []storagemart.Order
+	type tmpOrder struct {
+		Number      string
+		Sum         float64
+		ProcessedAt time.Time
+	}
+	var withdrawals []storagedefault.WithdrownOrder
 	for rows.Next() {
-		var w storagemart.Order
-		if err := rows.Scan(&w.Number, &w.Sum, &w.ProcessedAt); err != nil {
+		var w storagedefault.WithdrownOrder
+		if err := rows.Scan(&w.Order, &w.Sum, &w.ProcessedAt); err != nil {
 			return nil, err
 		}
+
 		withdrawals = append(withdrawals, w)
 	}
-
 	return withdrawals, nil
 }

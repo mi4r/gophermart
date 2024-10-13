@@ -53,5 +53,6 @@ func main() {
 
 	// Закрываем канал задач
 	close(taskCh)
+	worker.Stop()
 	service.Server.Shutdown()
 }
