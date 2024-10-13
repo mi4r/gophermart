@@ -26,7 +26,7 @@ type StorageGophermart interface {
 	UserOrdersReadByLogin(ctx context.Context, login string) ([]storagemart.Order, error)
 
 	WithdrawBalance(ctx context.Context, login, order string, sum, curBalance float64) error
-	GetUserWithdrawals(ctx context.Context, login string) ([]storagemart.Order, error)
+	GetUserWithdrawals(ctx context.Context, login string) ([]storagedefault.WithdrownOrder, error)
 	UserOrderReadAllNumbers(ctx context.Context) ([]string, error)
 	UserOrderUpdateStatus(ctx context.Context, number string, status storagedefault.OrderStatus) error
 	UserOrderUpdateAll(ctx context.Context, orders []storagedefault.Order) error

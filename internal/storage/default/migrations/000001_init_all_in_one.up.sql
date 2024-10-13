@@ -19,21 +19,21 @@ $$;
 CREATE TABLE rewards (
     id SERIAL PRIMARY KEY,
     match VARCHAR(255) UNIQUE NOT NULL,
-    reward DOUBLE PRECISION NOT NULL,
+    reward NUMERIC(10,2) NOT NULL,
     reward_type reward_type_enum DEFAULT '%' NOT NULL
 );
 
 CREATE TABLE goods (
     id SERIAL PRIMARY KEY,
     description VARCHAR(255) UNIQUE NOT NULL,
-    price DOUBLE PRECISION NOT NULL
+    price NUMERIC(10,2) NOT NULL
 );
 
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     order_number VARCHAR(255) UNIQUE NOT NULL,
     status status_enum DEFAULT 'REGISTERED' NOT NULL,
-    accrual DOUBLE PRECISION
+    accrual NUMERIC(10,2)
 );
 
 CREATE TABLE order_goods (
@@ -48,17 +48,17 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     login VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(64) NOT NULL,
-    current DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    withdrawn DOUBLE PRECISION DEFAULT 0 NOT NULL
+    current NUMERIC(10,2) DEFAULT 0 NOT NULL,
+    withdrawn NUMERIC(10,2) DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE user_orders (
     id SERIAL PRIMARY KEY,
     number VARCHAR(255) UNIQUE NOT NULL,
     status status_enum DEFAULT 'NEW' NOT NULL,
-    sum DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    sum NUMERIC(10,2) DEFAULT 0 NOT NULL,
     is_withdrawn BOOLEAN DEFAULT false NOT NULL,
-    accrual DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    accrual NUMERIC(10,2) DEFAULT 0 NOT NULL,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_at TIMESTAMP,
     user_login VARCHAR(255) NOT NULL,

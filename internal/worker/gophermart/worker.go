@@ -98,7 +98,6 @@ func (w *Worker) Execute() error {
 		}
 		orders = append(orders, order)
 	}
-	slog.Debug("orders", slog.Any("orders", orders))
 	err = w.Storage.UserOrderUpdateAll(ctx, orders)
 	if err != nil {
 		return err
