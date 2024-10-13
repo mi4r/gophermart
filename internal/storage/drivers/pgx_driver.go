@@ -224,9 +224,13 @@ func (d *pgxDriver) UserOrderUpdateAll(ctx context.Context, orders []storagedefa
 	defer tx.Rollback(ctx)
 
 	for _, o := range orders {
-		if _, err := tx.Exec(ctx, `
+		var userLogin string
+		if err := tx.QueryRow(ctx, `
 		UPDATE user_orders SET status = $1, accrual=$2, processed_at = NOW() WHERE number = $3
-		`, o.Status, o.Accrual, o.Number); err != nil {
+		RETURNING user_login;`, o.Status, o.Accrual, o.Number).Scan(&userLogin); err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, `UPDATE users SET current = current + $1 WHERE login = $2;`, o.Accrual, userLogin); err != nil {
 			return err
 		}
 	}
