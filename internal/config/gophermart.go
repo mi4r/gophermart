@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"os"
+	"time"
 )
 
 type GophermartConfig struct {
@@ -12,6 +13,7 @@ type GophermartConfig struct {
 	StoragePath          string
 	AccrualSystemAddress string
 	SecretKey            string
+	TickerTime           time.Duration
 }
 
 func NewGophermartConfig() GophermartConfig {
@@ -37,6 +39,7 @@ func loadGophermartFromFlags() GophermartConfig {
 	a := flag.String("a", "", "Listen address with port")
 	r := flag.String("r", "", "Accrual system address")
 	k := flag.String("k", "", "Secret key for JWT")
+	t := flag.Duration("t", 10*time.Second, "Ticker time")
 	flag.Parse()
 
 	c.StoragePath = ifEmpty(*d, confFromEnv.StoragePath)
@@ -45,6 +48,6 @@ func loadGophermartFromFlags() GophermartConfig {
 	c.DriverType = parseDriverType(c.StoragePath)
 	c.LogLevel = *l
 	c.SecretKey = *k
-
+	c.TickerTime = *t
 	return c
 }
