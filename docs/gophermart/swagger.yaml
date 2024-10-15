@@ -1,0 +1,428 @@
+basePath: /
+definitions:
+  Balance:
+    properties:
+      current:
+        type: number
+      withdrawn:
+        type: number
+    type: object
+  Creds:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  Good:
+    properties:
+      description:
+        type: string
+      price:
+        type: number
+    type: object
+  Order:
+    properties:
+      goods:
+        items:
+          $ref: '#/definitions/Good'
+        type: array
+      order:
+        type: string
+    type: object
+  Reward:
+    properties:
+      match:
+        type: string
+      reward:
+        type: number
+      reward_type:
+        $ref: '#/definitions/storageaccrual.RewardType'
+    type: object
+  storageaccrual.RewardType:
+    enum:
+    - pt
+    - '%'
+    type: string
+    x-enum-varnames:
+    - RewardTypePt
+    - RewardTypePercent
+  storagedefault.Order:
+    properties:
+      accrual:
+        type: number
+      number:
+        example: "12345678903"
+        type: string
+      status:
+        $ref: '#/definitions/storagedefault.OrderStatus'
+    type: object
+  storagedefault.OrderStatus:
+    enum:
+    - NEW
+    - REGISTERED
+    - PROCESSING
+    - INVALID
+    - PROCESSED
+    type: string
+    x-enum-varnames:
+    - StatusNew
+    - StatusRegistered
+    - StatusProcessing
+    - StatusInvalid
+    - StatusProcessed
+host: localhost:8080
+info:
+  contact: {}
+  description: Swagger for Gopher Market API
+  title: Gophermart
+  version: "1.0"
+paths:
+  /api/goods:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Хендлер используется менеджерами для добавления механик вознаграждения за покупки
+        Полученные системой расчёта начислений составы чеков проверяются на совпадение с зарегистрированными в данном хендлере вознаграждениями
+      parameters:
+      - description: Механика вознаграждения
+        in: body
+        name: reward
+        required: true
+        schema:
+          $ref: '#/definitions/Reward'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Вознаграждение успешно зарегистрировано
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "409":
+          description: Ключ поиска уже зарегистрирован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация информации о вознаграждении за товар
+      tags:
+      - Админ
+  /api/orders:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Для начисления баллов состав заказа должен быть проверен на совпадения с зарегистрированными записями вознаграждений за товары
+        Начисляется сумма совпадений
+        Принятый заказ не обязан браться в обработку непосредственно в момент получения запроса
+      parameters:
+      - description: Регистрация нового совершённого заказа
+        in: body
+        name: reward
+        required: true
+        schema:
+          $ref: '#/definitions/Order'
+      produces:
+      - text/plain
+      responses:
+        "202":
+          description: Заказ успешно принят в обработку
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "409":
+          description: Заказ уже принят в обработку
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация нового совершённого заказа
+      tags:
+      - Админ
+  /api/orders/{number}:
+    get:
+      consumes:
+      - text/plain
+      description: |-
+        Получение информации о расчёте начислений баллов лояльности за совершённый заказ
+        Номером заказа является последовательность цифр произвольной длины.
+        Номер заказа может быть проверен на корректность ввода с помощью алгоритма Луна.
+      parameters:
+      - description: Номером заказа
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            $ref: '#/definitions/storagedefault.Order'
+        "204":
+          description: Заказ не зарегистрирован в системе расчёта
+          schema:
+            type: string
+        "429":
+          description: Превышено количество запросов к сервису
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получение информации о расчёте начислений
+      tags:
+      - Сервис
+  /api/user/balance:
+    get:
+      description: |-
+        Хендлер доступен только авторизованному пользователю.
+        В ответе должны содержаться данные о текущей сумме баллов лояльности,
+        а также сумме использованных за весь период регистрации баллов.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            $ref: '#/definitions/Balance'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Пользователь
+  /api/user/balance/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Хендлер доступен только авторизованному пользователю.
+        Номер заказа представляет собой гипотетический номер
+        нового заказа пользователя, в счёт оплаты которого списываются баллы.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            type: string
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "402":
+          description: На счету недостаточно средств
+          schema:
+            type: string
+        "422":
+          description: Неверный номер заказа
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Заказы
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Для передачи аутентификационных данных используется механизм cookies
+      parameters:
+      - description: Логин и пароль зарегистрированного пользователя
+        in: body
+        name: creds
+        required: true
+        schema:
+          $ref: '#/definitions/Creds'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован и аутентифицирован
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "401":
+          description: Неверная пара логин/пароль
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Аутентификация пользователя
+      tags:
+      - Пользователь
+  /api/user/orders:
+    get:
+      consumes:
+      - text/plain
+      description: |-
+        Хендлер доступен только авторизованному пользователю
+        Номера заказа в выдаче должны быть отсортированы по времени загрузки от самых старых к самым новым
+        Формат даты — RFC3339.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            items:
+              $ref: '#/definitions/Order'
+            type: array
+        "204":
+          description: Нет данных для ответа
+          schema:
+            type: string
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получение списка загруженных номеров заказов
+      tags:
+      - Заказы
+    post:
+      consumes:
+      - text/plain
+      description: |-
+        Хендлер доступен только аутентифицированным пользователям
+        Номером заказа является последовательность цифр произвольной длины
+      parameters:
+      - description: Трек номер заказа
+        in: body
+        name: number
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Номер заказа уже был загружен этим пользователем
+          schema:
+            type: string
+        "202":
+          description: Новый номер заказа принят в обработку
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "401":
+          description: Пользователь не аутентифицирован
+          schema:
+            type: string
+        "409":
+          description: Номер заказа уже был загружен другим пользователем
+          schema:
+            type: string
+        "422":
+          description: Неверный формат номера заказа
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Загрузка номера заказа
+      tags:
+      - Заказы
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Для передачи аутентификационных данных используется механизм cookies
+      parameters:
+      - description: Логин и пароль не зарегистрированного пользователя
+        in: body
+        name: creds
+        required: true
+        schema:
+          $ref: '#/definitions/Creds'
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован и аутентифицирован
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "409":
+          description: Логин уже занят
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация пользователя
+      tags:
+      - Пользователь
+  /api/user/withdrawals:
+    get:
+      description: |-
+        Хендлер доступен только авторизованному пользователю.
+        Факты выводов в выдаче должны быть отсортированы по времени вывода от самых старых к самым новым.
+        Формат даты — RFC3339.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+          schema:
+            type: string
+        "204":
+          description: Нет ни одного списания
+          schema:
+            type: string
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Заказы
+  /ping:
+    get:
+      description: Простая проверка состояния сервера
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      tags:
+      - Разное
+swagger: "2.0"

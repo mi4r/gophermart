@@ -1,0 +1,48 @@
+# Документация https://taskfile.dev/
+version: "3"
+
+dotenv:
+  - .env # Должен быть файл .env Где указаны нужные переменные окружения
+
+vars:
+  migrVar: internal/storage/default/migrations
+
+tasks:
+  statictest:
+    cmds:
+      - go vet -vettool=./statictest ./...
+  statictest-win:
+    cmds:
+      - go vet -vettool=./statictest.exe ./...
+  mg-up:
+    cmds:
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up
+  mg-up-1:
+    cmds:
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable up 1
+  mg-down-1:
+    cmds:
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable down 1
+  mg-drop:
+    cmds:
+      - migrate -path {{.migrVar}} -database postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable drop
+
+  # OTHER
+  build:
+    cmds:
+      - "go build -o cmd/accrual/accrual cmd/accrual/main.go"
+      - "go build -o cmd/gophermart/gophermart cmd/gophermart/main.go"
+  build-win:
+    cmds:
+      - "go build -o cmd/accrual/accrual.exe cmd/accrual/main.go"
+      - "go build -o cmd/gophermart/gophermart.exe cmd/gophermart/main.go"
+  run:
+    cmds:
+      - go run cmd/gophermart/main.go -d postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable -k "secret-key" -a localhost:8080
+  run-accrual:
+    cmds:
+      - go run cmd/accrual/main.go -d postgres://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable -a localhost:8081
+  swag:
+    cmds:
+      - swag init -g ./cmd/gophermart/main.go -o docs/gophermart
+      - swag init -g ./cmd/accrual/main.go -o docs/accrual 
